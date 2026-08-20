@@ -332,7 +332,17 @@ const renderModulSections = (hasilModul, kelas) => {
                 {soal.pertanyaan}
                 {soal.pilihanJawaban && (
                   <div className="pl-2 text-blue-600">
-                    {soal.pilihanJawaban}
+                    {Array.isArray(soal.pilihanJawaban)
+                      ? soal.pilihanJawaban
+                          .map((opsi) =>
+                            typeof opsi === "object" && opsi !== null
+                              ? `${opsi.label ?? ""}. ${opsi.text ?? ""}`.trim()
+                              : String(opsi),
+                          )
+                          .join(", ")
+                      : typeof soal.pilihanJawaban === "object"
+                        ? JSON.stringify(soal.pilihanJawaban)
+                        : soal.pilihanJawaban}
                   </div>
                 )}
                 <div className="text-green-700 font-semibold">
