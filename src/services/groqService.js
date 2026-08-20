@@ -6,7 +6,7 @@
 const FUNCTION_URL =
   "https://dgrncsnsgtrsotnynsrl.supabase.co/functions/v1/modul-proxy";
 
-const MODEL = "llama-3.3-70b-versatile";
+const MODEL = "openai/gpt-oss-120b";
 
 /**
  * Fungsi dasar buat manggil Groq API lewat proxy server.

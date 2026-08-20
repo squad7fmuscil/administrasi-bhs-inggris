@@ -383,7 +383,7 @@ Buatlah vocabulary list yang LENGKAP, BERKUALITAS, dan SIAP PAKAI untuk mengajar
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             messages: [
               {
                 role: "system",
@@ -396,7 +396,7 @@ Buatlah vocabulary list yang LENGKAP, BERKUALITAS, dan SIAP PAKAI untuk mengajar
               },
             ],
             temperature: 0.7,
-            max_tokens: 8000,
+            max_tokens: 4000,
             top_p: 0.9,
           }),
         },

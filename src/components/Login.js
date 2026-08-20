@@ -21,6 +21,9 @@ export const Login = ({ onLogin, onShowToast }) => {
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
+  // ===== TAMBAHAN: State untuk pilih role login =====
+  const [loginAs, setLoginAs] = useState("guru"); // "guru" atau "siswa"
+
   const fetchStatsData = async () => {
     try {
       setStatsLoading(true);
@@ -106,6 +109,38 @@ export const Login = ({ onLogin, onShowToast }) => {
     }
 
     try {
+      // ============================================================
+      // ===== LOGIKA LOGIN SISWA =====
+      // ============================================================
+      if (loginAs === "siswa") {
+        const { data, error } = await supabase
+          .from("users")
+          .select("id, username, full_name, homeroom_class_id, role, is_active")
+          .eq("username", username)
+          .eq("password", password)
+          .eq("role", "student")
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (error) {
+          throw new Error("Terjadi kesalahan sistem: " + error.message);
+        }
+
+        if (!data) {
+          throw new Error("NIS atau password salah!");
+        }
+
+        // Simpen session siswa ke localStorage
+        localStorage.setItem("student_session", JSON.stringify(data));
+
+        // Refresh halaman biar App.js detect session siswa
+        window.location.href = "/";
+        return;
+      }
+
+      // ============================================================
+      // ===== LOGIKA LOGIN GURU / ADMIN (YANG LAMA) =====
+      // ============================================================
       const { data, error } = await supabase
         .from("users")
         .select("*")
@@ -126,6 +161,13 @@ export const Login = ({ onLogin, onShowToast }) => {
 
       if (data.password !== password) {
         throw new Error("Password salah");
+      }
+
+      // Cek role: harus admin atau teacher
+      if (!["admin", "teacher"].includes(data.role)) {
+        throw new Error(
+          "Akun ini bukan untuk guru atau admin. Silakan login sebagai siswa.",
+        );
       }
 
       const userData = {
@@ -293,10 +335,39 @@ export const Login = ({ onLogin, onShowToast }) => {
                 <div className="mt-3 w-16 h-1 mx-auto bg-gradient-to-r from-transparent via-blue-400/50 to-transparent rounded-full"></div>
               </div>
 
+              {/* ===== TAMBAHAN: TOMBOL PILIH ROLE LOGIN ===== */}
+              <div className="mb-5">
+                <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
+                  Login Sebagai
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setLoginAs("guru")}
+                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all duration-300 ${
+                      loginAs === "guru"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 border border-blue-400/30"
+                        : "bg-white/10 text-white/70 hover:bg-white/20 border border-white/10 hover:border-white/20"
+                    }`}>
+                    👨‍🏫 Guru
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginAs("siswa")}
+                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all duration-300 ${
+                      loginAs === "siswa"
+                        ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-500/30 border border-green-400/30"
+                        : "bg-white/10 text-white/70 hover:bg-white/20 border border-white/10 hover:border-white/20"
+                    }`}>
+                    🎒 Siswa
+                  </button>
+                </div>
+              </div>
+
               {/* Username Field - Enhanced */}
               <div className="mb-5 relative group/input">
                 <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
-                  Username
+                  {loginAs === "siswa" ? "NIS" : "Username"}
                 </label>
                 <div className="relative">
                   <input
@@ -307,7 +378,9 @@ export const Login = ({ onLogin, onShowToast }) => {
                         ? "border-red-400/50 shadow-lg shadow-red-500/20"
                         : "border-white/20 focus:border-blue-400/50 focus:shadow-lg focus:shadow-blue-500/20"
                     } focus:outline-none hover:border-white/30`}
-                    placeholder="Masukkan username"
+                    placeholder={
+                      loginAs === "siswa" ? "Masukkan NIS" : "Masukkan username"
+                    }
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -357,6 +430,17 @@ export const Login = ({ onLogin, onShowToast }) => {
                 )}
               </div>
 
+              {/* Info tambahan untuk siswa */}
+              {loginAs === "siswa" && (
+                <div className="mb-4 p-3 bg-blue-500/10 border border-blue-400/20 rounded-xl">
+                  <p className="text-blue-200/80 text-xs">
+                    💡 Masukkan <strong>NIS</strong> sebagai username dan
+                    password
+                    <strong> kelas7b</strong> (atau sesuai yang diberikan guru).
+                  </p>
+                </div>
+              )}
+
               {/* Error Message - Enhanced */}
               {errors.general && (
                 <div className="mb-5 p-4 bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 rounded-xl text-sm font-medium shadow-lg shadow-red-500/10 animate-pulse">
@@ -364,32 +448,38 @@ export const Login = ({ onLogin, onShowToast }) => {
                 </div>
               )}
 
-              {/* Remember Me & Forgot Password */}
-              <div className="flex justify-between items-center mb-6">
-                <label className="flex items-center gap-2 cursor-pointer group/check">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded bg-white/10 border-2 border-white/30 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all cursor-pointer"
-                  />
-                  <span className="text-sm text-white/80 group-hover/check:text-white transition-colors select-none">
-                    Ingat saya
-                  </span>
-                </label>
-                <a
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  className="text-sm text-blue-300 hover:text-blue-200 transition-colors font-medium hover:underline">
-                  Lupa password?
-                </a>
-              </div>
+              {/* Remember Me & Forgot Password - HANYA UNTUK GURU */}
+              {loginAs === "guru" && (
+                <div className="flex justify-between items-center mb-6">
+                  <label className="flex items-center gap-2 cursor-pointer group/check">
+                    <input
+                      type="checkbox"
+                      id="remember"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded bg-white/10 border-2 border-white/30 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all cursor-pointer"
+                    />
+                    <span className="text-sm text-white/80 group-hover/check:text-white transition-colors select-none">
+                      Ingat saya
+                    </span>
+                  </label>
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    className="text-sm text-blue-300 hover:text-blue-200 transition-colors font-medium hover:underline">
+                    Lupa password?
+                  </a>
+                </div>
+              )}
 
               {/* Submit Button - Navy Classic */}
               <button
                 type="submit"
-                className="relative w-full py-4 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 hover:from-blue-800 hover:via-blue-700 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all duration-500 flex items-center justify-center shadow-xl shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-800/60 hover:scale-[1.02] active:scale-[0.98] group/btn overflow-hidden"
+                className={`relative w-full py-4 rounded-xl text-white font-bold transition-all duration-500 flex items-center justify-center shadow-xl hover:scale-[1.02] active:scale-[0.98] group/btn overflow-hidden ${
+                  loginAs === "siswa"
+                    ? "bg-gradient-to-r from-green-700 via-green-600 to-green-500 hover:from-green-600 hover:via-green-500 hover:to-green-400 shadow-green-900/40 hover:shadow-2xl hover:shadow-green-800/60"
+                    : "bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 hover:from-blue-800 hover:via-blue-700 hover:to-blue-600 shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-800/60"
+                } disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed`}
                 disabled={isLoading}>
                 {/* Animated gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
@@ -400,7 +490,9 @@ export const Login = ({ onLogin, onShowToast }) => {
                     <span>Memproses...</span>
                   </>
                 ) : (
-                  <span className="relative z-10">Login</span>
+                  <span className="relative z-10">
+                    {loginAs === "siswa" ? "🚀 Masuk sebagai Siswa" : "Login"}
+                  </span>
                 )}
               </button>
 

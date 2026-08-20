@@ -41,6 +41,10 @@ import LatihanSoal from "./e-learning/EasyGrammar/LatihanSoal";
 import EasyGrammarChecker from "./e-learning/EasyGrammar/EasyGrammarChecker";
 // ======================================
 
+// ============ STUDENT DASHBOARD ============
+import StudentDashboard from "./students/StudentDashboard";
+// ===========================================
+
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -53,6 +57,26 @@ export default function App() {
 
   // Check localStorage saat pertama load
   useEffect(() => {
+    // CEK SESSION SISWA DULUAN
+    const studentSession = localStorage.getItem("student_session");
+    if (studentSession) {
+      try {
+        const studentData = JSON.parse(studentSession);
+        setCurrentUser({
+          ...studentData,
+          role: "student",
+          isStudent: true,
+        });
+        setIsLoggedIn(true);
+        setCurrentPage("student-dashboard");
+        return;
+      } catch (error) {
+        console.error("Error parsing student session:", error);
+        localStorage.removeItem("student_session");
+      }
+    }
+
+    // KALAU BUKAN SISWA, CEK USER BIASA
     const savedUser = localStorage.getItem("currentUser");
     const rememberMe = localStorage.getItem("rememberMe") === "true";
 
@@ -103,13 +127,15 @@ export default function App() {
   const handleLogout = () => {
     const userName = currentUser?.full_name || currentUser?.username || "User";
 
-    setCurrentUser(null);
-    setIsLoggedIn(false);
-    setCurrentPage("dashboard");
-
+    // Hapus semua session
     localStorage.removeItem("currentUser");
     localStorage.removeItem("rememberMe");
     sessionStorage.removeItem("currentUser");
+    localStorage.removeItem("student_session");
+
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+    setCurrentPage("dashboard");
 
     showToast(`Sampai jumpa, ${userName}!`, "success");
   };
@@ -137,6 +163,19 @@ export default function App() {
       );
     }
 
+    // ===== CEK JIKA INI SISWA =====
+    if (currentUser.isStudent || currentUser.role === "student") {
+      switch (currentPage) {
+        case "student-dashboard":
+          return <StudentDashboard />;
+        default:
+          // Kalo siswa coba akses halaman lain, balikin ke student-dashboard
+          setCurrentPage("student-dashboard");
+          return <StudentDashboard />;
+      }
+    }
+
+    // ===== GURU / ADMIN =====
     switch (currentPage) {
       case "dashboard":
         return (
@@ -423,13 +462,19 @@ export default function App() {
         }
       `}</style>
 
-      <Layout
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-        currentUser={currentUser}
-        onLogout={handleLogout}>
-        {renderPage()}
-      </Layout>
+      {/* ===== LAYOUT DENGAN SIDEBAR (HANYA UNTUK GURU/ADMIN) ===== */}
+      {/* SISWA TIDAK PAKE LAYOUT + SIDEBAR, LANGSUNG RENDER PAGE NYA */}
+      {currentUser.isStudent || currentUser.role === "student" ? (
+        <>{renderPage()}</>
+      ) : (
+        <Layout
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+          currentUser={currentUser}
+          onLogout={handleLogout}>
+          {renderPage()}
+        </Layout>
+      )}
     </>
   );
 }

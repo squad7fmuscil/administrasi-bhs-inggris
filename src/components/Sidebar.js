@@ -25,6 +25,7 @@ import {
   CalendarRange,
   CalendarClock,
   CalendarDays,
+  LogOut, // 🔥 TOMBOL LOGOUT DIIMPORT
 } from "lucide-react";
 
 export default function Sidebar({
@@ -54,9 +55,6 @@ export default function Sidebar({
   };
 
   // ============ E-LEARNING (single entry, bukan grup lagi) ============
-  // Semua sub-fitur (Easy Materi, Easy Text, Easy Vocab, Easy Soal,
-  // Easy Grammar) sekarang diakses lewat dashboard e-LearningDashboard.js,
-  // jadi di sidebar cukup 1 tombol menuju halaman "elearning".
   const elearningItem = {
     id: "elearning",
     label: "E-Learning",
@@ -404,7 +402,9 @@ export default function Sidebar({
             )}
           </nav>
 
-          {/* User Info */}
+          {/* ============================================================
+              USER INFO + LOGOUT (SUDAH DIREVISI)
+              ============================================================ */}
           <div className="border-t border-white/10 p-3 backdrop-blur-sm">
             <div
               className={`
@@ -413,13 +413,15 @@ export default function Sidebar({
               ${!isSidebarOpen && "lg:p-2"}
             `}>
               <div className="flex items-center gap-3">
-                <div className="relative">
+                {/* Avatar User */}
+                <div className="relative flex-shrink-0">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
                     <User size={20} className="text-white" />
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
                 </div>
 
+                {/* Nama User (hanya muncul kalo sidebar terbuka) */}
                 {isSidebarOpen && (
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white truncate">
@@ -434,6 +436,20 @@ export default function Sidebar({
                     </p>
                   </div>
                 )}
+
+                {/* ==========================================================
+                    TOMBOL LOGOUT - MUNCUL SELALU (BAIK SIDEBAR KECIL ATAU BESAR)
+                    ========================================================== */}
+                <button
+                  onClick={onLogout}
+                  className={`
+                    p-2 hover:bg-white/10 rounded-lg transition-all duration-200 
+                    text-white/70 hover:text-white flex-shrink-0
+                    ${!isSidebarOpen && "ml-auto"}
+                  `}
+                  title="Logout">
+                  <LogOut size={isSidebarOpen ? 18 : 20} />
+                </button>
               </div>
             </div>
           </div>

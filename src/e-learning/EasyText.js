@@ -677,7 +677,7 @@ Generate a high-quality, ready-to-use ${
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             messages: [
               {
                 role: "system",
@@ -690,7 +690,7 @@ Generate a high-quality, ready-to-use ${
               },
             ],
             temperature: 0.8,
-            max_tokens: 8000,
+            max_tokens: 4000,
             top_p: 0.95,
           }),
         },
