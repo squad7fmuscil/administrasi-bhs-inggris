@@ -1,0 +1,46 @@
+@echo off
+title Aplikasi Administrasi Bahasa Inggris Vite React
+color 1F
+echo ================================================
+echo          VITE + REACT DEVELOPMENT SERVER
+echo ================================================
+echo.
+echo [*] Memulai aplikasi...
+echo.
+
+cd /d "D:\Aplikasi Produksi\Administrasi Bahasa Inggris"
+
+if not exist "package.json" (
+    echo [ERROR] File package.json tidak ditemukan!
+    echo Pastikan folder aplikasi sudah benar.
+    echo.
+    pause
+    exit
+)
+
+if not exist "vite.config.js" (
+    echo [ERROR] File vite.config.js tidak ditemukan!
+    echo Pastikan ini adalah project Vite.
+    echo.
+    pause
+    exit
+)
+
+echo [*] Menjalankan npm start...
+echo.
+echo ================================================
+echo.
+echo [INFO] Server akan berjalan di: http://localhost:3000
+echo [INFO] Tekan CTRL + C untuk menghentikan server
+echo.
+echo ================================================
+echo.
+
+npm run dev
+
+echo.
+echo ================================================
+echo [*] Development server telah ditutup
+echo ================================================
+echo.
+pause
