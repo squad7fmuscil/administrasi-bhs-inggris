@@ -36,11 +36,34 @@ echo.
 echo ================================================
 echo.
 
-npm run dev
+REM Jalanin server di jendela terpisah biar gak nge-block script ini
+start "Vite Dev Server" cmd /k "npm run dev"
+
+REM Kasih jeda dikit biar server sempet nyala duluan sebelum Chrome dibuka
+timeout /t 4 /nobreak >nul
+
+REM Buka khusus di Chrome, pake localhost (BUKAN 192.168.x.x) biar
+REM localStorage/cookie konsisten satu origin terus tiap kali testing
+echo [*] Membuka aplikasi di Google Chrome...
+
+set "CHROME_PATH="
+if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+if exist "%LocalAppData%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%LocalAppData%\Google\Chrome\Application\chrome.exe"
+
+if defined CHROME_PATH (
+    start "" "%CHROME_PATH%" "http://localhost:3000"
+) else (
+    echo [WARNING] chrome.exe gak ketemu di lokasi standar.
+    echo [WARNING] Membuka pakai browser default sebagai gantinya...
+    start "" "http://localhost:3000"
+)
 
 echo.
 echo ================================================
-echo [*] Development server telah ditutup
+echo [*] Server jalan di jendela terpisah. Tutup jendela
+echo     "Vite Dev Server" itu buat matiin server-nya.
 echo ================================================
 echo.
 pause
+exit

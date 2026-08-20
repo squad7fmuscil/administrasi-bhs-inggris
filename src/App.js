@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 
 // Core Components
 import Login from "./components/Login";
+import { getStudentSession, clearStudentSession } from "./utils/studentSession";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 
@@ -57,23 +58,17 @@ export default function App() {
 
   // Check localStorage saat pertama load
   useEffect(() => {
-    // CEK SESSION SISWA DULUAN
-    const studentSession = localStorage.getItem("student_session");
-    if (studentSession) {
-      try {
-        const studentData = JSON.parse(studentSession);
-        setCurrentUser({
-          ...studentData,
-          role: "student",
-          isStudent: true,
-        });
-        setIsLoggedIn(true);
-        setCurrentPage("student-dashboard");
-        return;
-      } catch (error) {
-        console.error("Error parsing student session:", error);
-        localStorage.removeItem("student_session");
-      }
+    // CEK SESSION SISWA DULUAN (localStorage + cookie fallback)
+    const studentData = getStudentSession();
+    if (studentData) {
+      setCurrentUser({
+        ...studentData,
+        role: "student",
+        isStudent: true,
+      });
+      setIsLoggedIn(true);
+      setCurrentPage("student-dashboard");
+      return;
     }
 
     // KALAU BUKAN SISWA, CEK USER BIASA
@@ -131,7 +126,7 @@ export default function App() {
     localStorage.removeItem("currentUser");
     localStorage.removeItem("rememberMe");
     sessionStorage.removeItem("currentUser");
-    localStorage.removeItem("student_session");
+    clearStudentSession();
 
     setCurrentUser(null);
     setIsLoggedIn(false);
