@@ -42,8 +42,12 @@ import LatihanSoal from "./e-learning/EasyGrammar/LatihanSoal";
 import EasyGrammarChecker from "./e-learning/EasyGrammar/EasyGrammarChecker";
 // ======================================
 
-// ============ STUDENT DASHBOARD ============
+// ============ STUDENT PORTAL ============
+import StudentLayout from "./students/StudentLayout";
 import StudentDashboard from "./students/StudentDashboard";
+import StudentJadwal from "./students/StudentJadwal";
+import StudentPresensi from "./students/StudentPresensi";
+import StudentLainnya from "./students/StudentLainnya";
 // ===========================================
 
 export default function App() {
@@ -159,15 +163,42 @@ export default function App() {
     }
 
     // ===== CEK JIKA INI SISWA =====
+    // Portal siswa punya routing + layout sendiri (StudentLayout, bottom
+    // nav sendiri) — terpisah total dari Layout.js punya guru/admin.
     if (currentUser.isStudent || currentUser.role === "student") {
-      switch (currentPage) {
-        case "student-dashboard":
-          return <StudentDashboard />;
-        default:
-          // Kalo siswa coba akses halaman lain, balikin ke student-dashboard
-          setCurrentPage("student-dashboard");
-          return <StudentDashboard />;
-      }
+      const studentPages = [
+        "student-dashboard",
+        "student-jadwal",
+        "student-presensi",
+        "student-lainnya",
+      ];
+      const activeStudentPage = studentPages.includes(currentPage)
+        ? currentPage
+        : "student-dashboard";
+
+      const renderStudentPage = () => {
+        switch (activeStudentPage) {
+          case "student-jadwal":
+            return <StudentJadwal />;
+          case "student-presensi":
+            return <StudentPresensi />;
+          case "student-lainnya":
+            return <StudentLainnya />;
+          case "student-dashboard":
+          default:
+            return <StudentDashboard onPageChange={setCurrentPage} />;
+        }
+      };
+
+      return (
+        <StudentLayout
+          currentPage={activeStudentPage}
+          onPageChange={setCurrentPage}
+          currentUser={currentUser}
+          onLogout={handleLogout}>
+          {renderStudentPage()}
+        </StudentLayout>
+      );
     }
 
     // ===== GURU / ADMIN =====
@@ -458,9 +489,10 @@ export default function App() {
       `}</style>
 
       {/* ===== LAYOUT DENGAN SIDEBAR (HANYA UNTUK GURU/ADMIN) ===== */}
-      {/* SISWA TIDAK PAKE LAYOUT + SIDEBAR, LANGSUNG RENDER PAGE NYA */}
+      {/* SISWA PAKE StudentLayout (udah dibungkus di dalem renderPage()
+          di atas), BUKAN Layout.js punya guru/admin. */}
       {currentUser.isStudent || currentUser.role === "student" ? (
-        <>{renderPage()}</>
+        renderPage()
       ) : (
         <Layout
           currentPage={currentPage}

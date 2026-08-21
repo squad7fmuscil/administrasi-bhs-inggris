@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { getActiveAcademicInfo } from "../services/academicYearService";
+import PengumumanWaliKelas from "./PengumumanWaliKelas";
 
 // ✅ NEW: Jadwal jam pelajaran master, dipakai buat nentuin "jam ke berapa"
 // dari start_time/end_time di teacher_schedules (yang cuma nyimpen jam,
@@ -1080,6 +1081,17 @@ const DashboardHomeTeacher = ({ currentUser, onPageChange }) => {
             )}
           </div>
         </div>
+
+        {/* Card: Pengumuman Kelas — cuma muncul buat wali kelas (classInfo
+            keisi dari currentUser.homeroom_class_id) */}
+        {classInfo && (
+          <div className="mt-4 sm:mt-6">
+            <PengumumanWaliKelas
+              classId={classInfo}
+              teacherId={currentUser.id}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
