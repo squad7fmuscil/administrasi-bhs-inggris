@@ -7,7 +7,7 @@ import {
   formatDate,
   getStatusMeta,
   isOngoing,
-} from "./studentHelpers";
+} from "./StudentHelpers";
 import { Clock, CheckCircle, Bell, Users as UsersIcon } from "lucide-react";
 
 // ========================================================================
