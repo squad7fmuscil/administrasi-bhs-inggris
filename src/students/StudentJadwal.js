@@ -4,7 +4,21 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import useStudentProfile from "./useStudentProfile";
 import { DAY_NAMES, getDayName, isOngoing } from "./studentHelpers";
-import { Clock } from "lucide-react";
+
+// Jumat jam pelajarannya beda (lebih pendek) dari hari lain — dipake buat
+// nimpa start_time/end_time dari database khusus pas activeDay === "Jumat".
+// Key = nomor jam ke berapa (period), bukan dari data class_schedules.
+const FRIDAY_TIMES = {
+  1: { start: "06:30", end: "07:05" },
+  2: { start: "07:05", end: "07:40" },
+  3: { start: "07:40", end: "08:10" },
+  4: { start: "08:10", end: "08:40" },
+  5: { start: "08:40", end: "09:10" },
+  6: { start: "09:40", end: "10:10" },
+  7: { start: "10:10", end: "10:40" },
+  8: { start: "", end: "" },
+  9: { start: "", end: "" },
+};
 
 // Senin - Sabtu (sesuaikan kalau sekolah lo masuk Minggu / gak masuk Sabtu)
 const SCHOOL_DAYS = DAY_NAMES.filter((d) => d !== "Minggu");
@@ -27,10 +41,12 @@ export default function StudentJadwal() {
       setLoading(true);
       setError(null);
       try {
+        // Catatan: tabel "jadwal" gak eksis, diganti "class_schedules"
+        // (tabel baru, input manual, khusus jadwal per kelas).
         const { data, error: err } = await supabase
-          .from("jadwal")
+          .from("class_schedules")
           .select("id, day, subject, start_time, end_time, teacher_name")
-          .eq("class", student.homeroom_class_id)
+          .eq("class_id", student.homeroom_class_id)
           .order("start_time", { ascending: true });
 
         if (err) throw err;
@@ -95,43 +111,73 @@ export default function StudentJadwal() {
           🎉 Tidak ada jadwal di hari {activeDay}.
         </div>
       ) : (
-        <div className="space-y-2">
-          {daySchedule.map((item) => {
-            const ongoing =
-              activeDay === getDayName() &&
-              isOngoing(item.start_time, item.end_time);
-            return (
-              <div
-                key={item.id}
-                className={`rounded-2xl border p-4 shadow-sm flex items-center justify-between transition ${
-                  ongoing
-                    ? "bg-blue-50 border-blue-300"
-                    : "bg-white border-gray-100"
-                }`}>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      ongoing
-                        ? "bg-blue-600 text-white"
-                        : "bg-blue-50 text-blue-600"
-                    }`}>
-                    <Clock size={18} />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800">
-                      {item.subject}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {item.teacher_name || "-"}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                  {item.start_time?.slice(0, 5)}–{item.end_time?.slice(0, 5)}
-                </div>
-              </div>
-            );
-          })}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-400 border-b border-gray-100">
+                  <th className="py-2.5 px-4 font-semibold whitespace-nowrap">
+                    Jam Ke
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">Mapel</th>
+                  <th className="py-2.5 px-4 font-semibold whitespace-nowrap">
+                    Waktu
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {daySchedule.map((item, idx) => {
+                  const period = idx + 1;
+
+                  // Khusus hari Jumat, timpa waktu dari database pake jam
+                  // Jumat yang lebih pendek (FRIDAY_TIMES), berdasarkan
+                  // nomor jam ke berapa.
+                  const isJumat = activeDay === "Jumat";
+                  const startTime = isJumat
+                    ? FRIDAY_TIMES[period]?.start
+                    : item.start_time;
+                  const endTime = isJumat
+                    ? FRIDAY_TIMES[period]?.end
+                    : item.end_time;
+
+                  const ongoing =
+                    activeDay === getDayName() && isOngoing(startTime, endTime);
+
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`border-b border-gray-50 last:border-0 transition ${
+                        ongoing ? "bg-blue-50" : ""
+                      }`}>
+                      <td className="py-3 px-4">
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                            ongoing
+                              ? "bg-blue-600 text-white"
+                              : "bg-blue-50 text-blue-600"
+                          }`}>
+                          {period}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="font-semibold text-gray-800">
+                          {item.subject}
+                        </p>
+                        <p className="text-xs text-gray-500 font-semibold mt-0.5">
+                          {item.teacher_name || "-"}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 text-xs font-medium text-blue-600 whitespace-nowrap">
+                        {startTime && endTime
+                          ? `${startTime.slice(0, 5)}–${endTime.slice(0, 5)}`
+                          : "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </>

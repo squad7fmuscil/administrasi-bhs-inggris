@@ -59,8 +59,32 @@ export default function useStudentProfile() {
           return;
         }
 
+        // Catatan penting: `userData.id` di atas adalah users.id (dipake
+        // buat login & buat FK di piket_schedule.siswa_id). TAPI tabel
+        // "attendance" FK-nya ke students.id, yang beda dari users.id.
+        // Query tambahan ini ambil students.id lewat students.user_id,
+        // disimpen sebagai `studentRecordId` — dipake khusus buat query
+        // ke tabel "attendance". Field `id` yang lama TETAP users.id,
+        // gak diubah, biar gak ganggu tempat lain yang masih pake itu
+        // (misal piket_schedule).
+        const { data: studentRow, error: studentRowErr } = await supabase
+          .from("students")
+          .select("id")
+          .eq("user_id", userData.id)
+          .maybeSingle();
+
+        if (studentRowErr) {
+          console.error(
+            "[useStudentProfile] Gagal ambil students.id dari user_id:",
+            studentRowErr,
+          );
+        }
+
         if (active) {
-          setStudent(userData);
+          setStudent({
+            ...userData,
+            studentRecordId: studentRow?.id || null,
+          });
           setLoading(false);
         }
       } catch (err) {

@@ -28,7 +28,6 @@ export default function StudentDashboard({ onPageChange }) {
   } = useStudentProfile();
 
   const [todayStatus, setTodayStatus] = useState(null);
-  const [absentToday, setAbsentToday] = useState([]);
   const [todaySchedule, setTodaySchedule] = useState([]);
   const [piketToday, setPiketToday] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
@@ -46,57 +45,82 @@ export default function StudentDashboard({ onPageChange }) {
 
       try {
         const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
+        // Pake tanggal lokal (WIB), bukan today.toISOString() yang convert
+        // ke UTC dulu — kalau dipake toISOString, jam 00:00-06:59 WIB bakal
+        // ke-hitung tanggal kemarin (UTC+7).
+        const todayStr = `${today.getFullYear()}-${String(
+          today.getMonth() + 1,
+        ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
         const todayName = getDayName(today);
 
-        // Presensi hari ini — status sendiri
-        const { data: myAtt } = await supabase
-          .from("attendance")
-          .select("status")
-          .eq("student_id", student.id)
-          .eq("date", todayStr)
-          .maybeSingle();
+        const [
+          { data: myAtt, error: myAttErr },
+          { data: schedData, error: schedErr },
+          { data: piketData, error: piketErr },
+          { data: annData, error: annErr },
+        ] = await Promise.all([
+          // Presensi hari ini — status sendiri (khusus row "walikelas" /
+          // harian, karena ada juga row "mapel" dari absensi Bahasa Inggris
+          // yang gak dipake buat dashboard ini)
+          // Catatan: attendance.student_id itu FK ke students.id, BUKAN
+          // users.id — jadi pake student.studentRecordId, bukan student.id.
+          supabase
+            .from("attendance")
+            .select("status")
+            .eq("student_id", student.studentRecordId)
+            .eq("date", todayStr)
+            .eq("type", "walikelas")
+            .maybeSingle(),
+
+          // Jadwal hari ini doang (jadwal mingguan lengkap ada di menu Jadwal)
+          // Catatan: tabel "jadwal" gak eksis, diganti "class_schedules"
+          // (tabel baru, input manual, khusus jadwal per kelas — beda
+          // dari "teacher_schedules" yang per-guru)
+          supabase
+            .from("class_schedules")
+            .select("id, day, subject, start_time, end_time, teacher_name")
+            .eq("class_id", student.homeroom_class_id)
+            .eq("day", todayName)
+            .order("start_time", { ascending: true }),
+
+          // Piket hari ini
+          supabase
+            .from("piket_schedule")
+            .select("siswa_id, users:siswa_id (full_name)")
+            .eq("kelas_id", student.homeroom_class_id)
+            .eq("hari", todayName),
+
+          // Pengumuman terbaru (3 aja di dashboard, selebihnya di menu Lainnya)
+          supabase
+            .from("pengumuman")
+            .select("id, title, content, created_at")
+            .eq("target_class", student.homeroom_class_id)
+            .order("created_at", { ascending: false })
+            .limit(3),
+        ]);
+
+        // Kumpulin semua error query (kalau ada) biar keliatan di UI,
+        // bukan diem-diem nampilin data kosong kayak sebelumnya.
+        const errors = [
+          myAttErr && "presensi kamu",
+          schedErr && "jadwal",
+          piketErr && "piket",
+          annErr && "pengumuman",
+        ].filter(Boolean);
+
+        if (errors.length > 0) {
+          console.error("Dashboard query errors:", {
+            myAttErr,
+            schedErr,
+            piketErr,
+            annErr,
+          });
+          setDataError(`Gagal memuat data: ${errors.join(", ")}.`);
+        }
 
         setTodayStatus(myAtt?.status || null);
-
-        // Presensi hari ini — siswa sekelas yang gak hadir (exclude diri sendiri)
-        const { data: classAtt } = await supabase
-          .from("attendance")
-          .select("status, users:student_id (full_name)")
-          .eq("class_id", student.homeroom_class_id)
-          .eq("date", todayStr)
-          .neq("student_id", student.id)
-          .in("status", ["sakit", "izin", "alpa"]);
-
-        setAbsentToday(classAtt || []);
-
-        // Jadwal hari ini doang (jadwal mingguan lengkap ada di menu Jadwal)
-        const { data: schedData } = await supabase
-          .from("jadwal")
-          .select("id, day, subject, start_time, end_time, teacher_name")
-          .eq("class", student.homeroom_class_id)
-          .eq("day", todayName)
-          .order("start_time", { ascending: true });
-
         setTodaySchedule(schedData || []);
-
-        // Piket hari ini
-        const { data: piketData } = await supabase
-          .from("piket_schedule")
-          .select("siswa_id, users:siswa_id (full_name)")
-          .eq("kelas_id", student.homeroom_class_id)
-          .eq("hari", todayName);
-
         setPiketToday(piketData || []);
-
-        // Pengumuman terbaru (3 aja di dashboard, selebihnya di menu Lainnya)
-        const { data: annData } = await supabase
-          .from("pengumuman")
-          .select("id, title, content, created_at")
-          .eq("target_class", student.homeroom_class_id)
-          .order("created_at", { ascending: false })
-          .limit(3);
-
         setAnnouncements(annData || []);
       } catch (err) {
         console.error("Error loading student dashboard:", err);
@@ -148,7 +172,65 @@ export default function StudentDashboard({ onPageChange }) {
 
   const statusMeta = getStatusMeta(todayStatus);
   const StatusIcon = statusMeta.icon;
-  const isSayaPiket = piketToday.some((p) => p.siswa_id === student?.id);
+
+  // Susun nama piket + tandain mana yang siswa yang lagi login (buat notice)
+  const piketNames = piketToday
+    .map((p) => ({
+      siswaId: p.siswa_id,
+      name: p.users?.full_name,
+      isMe: p.siswa_id === student?.id,
+    }))
+    .filter((p) => p.name);
+  const isSayaPiket = piketNames.some((p) => p.isMe);
+
+  // Split 2 kolom: kolom 1 duluan diisi (4 orang), sisanya kolom 2 (3 orang,
+  // atau 4-4 kalau totalnya 8 kayak hari Jumat) — otomatis ngikutin jumlah,
+  // gak di-hardcode per hari.
+  const piketHalf = Math.ceil(piketNames.length / 2);
+  const piketCol1 = piketNames.slice(0, piketHalf);
+  const piketCol2 = piketNames.slice(piketHalf);
+
+  // Gabungin jam pelajaran yang beruntun & mapelnya sama jadi 1 blok
+  // (misal jam ke-1 & ke-2 sama-sama Bahasa Inggris → jadi "2JP (1-2)").
+  // Nomor jam pelajaran (period) diambil dari urutan array aja (index+1),
+  // karena todaySchedule udah di-sort ascending by start_time dari query.
+  const scheduleBlocks = [];
+  todaySchedule.forEach((item, idx) => {
+    const period = idx + 1;
+    const prev = scheduleBlocks[scheduleBlocks.length - 1];
+    const nyambung =
+      prev &&
+      prev.subject === item.subject &&
+      prev.teacher_name === item.teacher_name &&
+      prev.end_time === item.start_time;
+
+    if (nyambung) {
+      prev.end_time = item.end_time;
+      prev.endPeriod = period;
+      prev.jp += 1;
+    } else {
+      scheduleBlocks.push({
+        id: item.id,
+        subject: item.subject,
+        teacher_name: item.teacher_name,
+        start_time: item.start_time,
+        end_time: item.end_time,
+        startPeriod: period,
+        endPeriod: period,
+        jp: 1,
+      });
+    }
+  });
+
+  const timeToMinutes = (t) => {
+    if (!t) return null;
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const nowMinutes = (() => {
+    const n = new Date();
+    return n.getHours() * 60 + n.getMinutes();
+  })();
 
   return (
     <>
@@ -168,68 +250,77 @@ export default function StudentDashboard({ onPageChange }) {
 
       {/* ====== PRESENSI HARI INI ====== */}
       <section>
-        <h2 className="text-base font-bold text-gray-800 mb-2">
-          Presensi Hari Ini
-        </h2>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center justify-between">
+          <p className="text-sm font-semibold text-gray-600">Presensi Saya :</p>
           <div
-            className={`flex items-center gap-2 text-sm font-semibold px-3 py-2 rounded-xl border w-fit ${statusMeta.color}`}>
-            <StatusIcon size={16} />
+            className={`flex items-center gap-1.5 text-base font-bold px-3 py-1.5 rounded-xl border ${statusMeta.color}`}>
+            <StatusIcon size={18} />
             {statusMeta.label}
           </div>
-
-          {absentToday.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-50">
-              <p className="text-xs font-medium text-gray-400 mb-2">
-                Tidak Hadir Hari Ini
-              </p>
-              <div className="space-y-1.5">
-                {absentToday.map((a, idx) => {
-                  const meta = getStatusMeta(a.status);
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">
-                        {a.users?.full_name || "-"}
-                      </span>
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${meta.color}`}>
-                        {meta.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
       {/* ====== PIKET HARI INI ====== */}
-      {piketToday.length > 0 && (
+      {piketNames.length > 0 && (
         <section>
           <div
             className={`rounded-2xl border p-4 shadow-sm ${
               isSayaPiket
-                ? "bg-orange-50 border-orange-200"
+                ? "bg-orange-50 border-orange-300"
                 : "bg-white border-gray-100"
             }`}>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-3">
               <UsersIcon size={18} className="text-orange-500" />
               <p className="text-sm font-bold text-gray-800">Piket Hari Ini</p>
-              {isSayaPiket && (
-                <span className="text-[10px] font-semibold bg-orange-500 text-white px-2 py-0.5 rounded-full">
-                  Hari Ini Jadwalnya Kamu Piket !
-                </span>
-              )}
             </div>
-            <p className="text-sm text-gray-600">
-              {piketToday
-                .map((p) => p.users?.full_name)
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
+
+            {/* Notice khusus kalau siswa yang login kebagian piket hari ini */}
+            {isSayaPiket && (
+              <div className="flex items-center gap-2 bg-orange-500 text-white text-xs font-semibold px-3 py-2.5 rounded-xl mb-3">
+                <span className="text-base leading-none">🧹</span>
+                <span>Kamu kebagian piket hari ini, jangan lupa ya!</span>
+              </div>
+            )}
+
+            {isSayaPiket ? (
+              // Kalau kebagian piket: tampilin daftar 1 kelompok (2 kolom)
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                <div className="space-y-1.5">
+                  {piketCol1.map((p) => (
+                    <div
+                      key={p.siswaId}
+                      className={`text-xs sm:text-sm px-2.5 py-1.5 rounded-lg truncate ${
+                        p.isMe
+                          ? "bg-orange-500 text-white font-semibold"
+                          : "bg-gray-50 text-gray-700"
+                      }`}>
+                      {p.isMe ? "👉 " : ""}
+                      {p.name}
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1.5">
+                  {piketCol2.map((p) => (
+                    <div
+                      key={p.siswaId}
+                      className={`text-xs sm:text-sm px-2.5 py-1.5 rounded-lg truncate ${
+                        p.isMe
+                          ? "bg-orange-500 text-white font-semibold"
+                          : "bg-gray-50 text-gray-700"
+                      }`}>
+                      {p.isMe ? "👉 " : ""}
+                      {p.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // Kalau bukan giliran dia: gak usah nampilin nama kelompok
+              // lain, cukup notice simpel biar clean.
+              <p className="text-sm text-gray-400 text-center py-1">
+                Tidak ada jadwal piket buat Anda hari ini
+              </p>
+            )}
           </div>
         </section>
       )}
@@ -247,50 +338,60 @@ export default function StudentDashboard({ onPageChange }) {
             Lihat Semua
           </button>
         </div>
-        {todaySchedule.length === 0 ? (
+        {scheduleBlocks.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm shadow-sm">
             🎉 Tidak Ada Jadwal Hari Ini.
           </div>
         ) : (
           <div className="space-y-2">
-            {todaySchedule.map((item) => {
-              const ongoing = isOngoing(item.start_time, item.end_time);
+            {scheduleBlocks.map((block) => {
+              const ongoing = isOngoing(block.start_time, block.end_time);
+              const endMinutes = timeToMinutes(block.end_time);
+              const statusLabel = ongoing
+                ? "Berlangsung"
+                : nowMinutes > endMinutes
+                  ? "Selesai"
+                  : "Akan Datang";
+              const jpLabel =
+                block.jp > 1
+                  ? `${block.jp}JP (${block.startPeriod}-${block.endPeriod})`
+                  : `${block.jp}JP (${block.startPeriod})`;
+
               return (
                 <div
-                  key={item.id}
-                  className={`rounded-2xl border p-4 shadow-sm flex items-center justify-between transition ${
+                  key={block.id}
+                  className={`rounded-2xl border p-4 shadow-sm transition ${
                     ongoing
                       ? "bg-blue-50 border-blue-300"
                       : "bg-white border-gray-100"
                   }`}>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {jpLabel}
+                  </span>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm font-medium text-gray-800">
+                      {block.start_time?.slice(0, 5)} –{" "}
+                      {block.end_time?.slice(0, 5)}
+                    </p>
+                    <p
+                      className={`text-xs font-semibold ${
                         ongoing
-                          ? "bg-blue-600 text-white"
-                          : "bg-blue-50 text-blue-600"
+                          ? "text-blue-600"
+                          : statusLabel === "Selesai"
+                            ? "text-gray-400"
+                            : "text-emerald-600"
                       }`}>
-                      {item.start_time?.slice(0, 2)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-800">
-                          {item.subject}
-                        </p>
-                        {ongoing && (
-                          <span className="text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full">
-                            Berlangsung
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        {item.teacher_name || "-"}
-                      </p>
-                    </div>
+                      {statusLabel}
+                    </p>
                   </div>
-                  <div className="text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-                    {item.start_time?.slice(0, 5)}–{item.end_time?.slice(0, 5)}
-                  </div>
+                  <p className="font-bold text-gray-800 uppercase mt-1">
+                    {block.subject}
+                  </p>
+                  {block.teacher_name && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      🧑‍🏫 {block.teacher_name}
+                    </p>
+                  )}
                 </div>
               );
             })}

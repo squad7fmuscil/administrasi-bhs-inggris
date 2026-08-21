@@ -22,10 +22,16 @@ export default function StudentPresensi() {
       setLoading(true);
       setError(null);
       try {
+        // Filter type="walikelas" biar cuma ambil presensi harian, bukan
+        // ikut kecampur row "mapel" (absensi Bahasa Inggris per kelas
+        // yang juga tersimpan di tabel attendance yang sama).
+        // Catatan: attendance.student_id itu FK ke students.id, BUKAN
+        // users.id — jadi pake student.studentRecordId, bukan student.id.
         const { data, error: err } = await supabase
           .from("attendance")
           .select("id, date, status")
-          .eq("student_id", student.id)
+          .eq("student_id", student.studentRecordId)
+          .eq("type", "walikelas")
           .order("date", { ascending: false })
           .limit(60);
 
