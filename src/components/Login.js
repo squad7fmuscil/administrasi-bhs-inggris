@@ -23,7 +23,11 @@ export const Login = ({ onLogin, onShowToast }) => {
   const [statsLoading, setStatsLoading] = useState(true);
 
   // ===== TAMBAHAN: State untuk pilih role login =====
-  const [loginAs, setLoginAs] = useState("guru"); // "guru" atau "siswa"
+  // Default "siswa" — halaman login publik cuma buat siswa. Toggle Guru
+  // cuma nongol kalau URL-nya ada query param rahasia (lihat useEffect di
+  // bawah), jadi siswa gak tau ada opsi login guru sama sekali.
+  const [loginAs, setLoginAs] = useState("siswa");
+  const [showRoleToggle, setShowRoleToggle] = useState(false);
 
   const fetchStatsData = async () => {
     try {
@@ -91,6 +95,19 @@ export const Login = ({ onLogin, onShowToast }) => {
       console.error("Failed to load background image");
       setImageLoaded(true);
     };
+  }, []);
+
+  // ===== TAMBAHAN: Akses login guru "tersembunyi" =====
+  // Buka halaman login pake ?english (misal: yoursite.com/?english) biar
+  // toggle "Login Sebagai" muncul & default-nya langsung ke Guru. Tanpa
+  // query param ini, halaman login cuma nunjukin form siswa doang — siswa
+  // gak bakal tau ada opsi login guru.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("english")) {
+      setShowRoleToggle(true);
+      setLoginAs("guru");
+    }
   }, []);
 
   const handleSubmit = async (e) => {
@@ -344,33 +361,37 @@ export const Login = ({ onLogin, onShowToast }) => {
               </div>
 
               {/* ===== TAMBAHAN: TOMBOL PILIH ROLE LOGIN ===== */}
-              <div className="mb-5">
-                <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
-                  Login Sebagai
-                </label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setLoginAs("guru")}
-                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all duration-300 ${
-                      loginAs === "guru"
-                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 border border-blue-400/30"
-                        : "bg-white/10 text-white/70 hover:bg-white/20 border border-white/10 hover:border-white/20"
-                    }`}>
-                    👨‍🏫 Guru
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoginAs("siswa")}
-                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all duration-300 ${
-                      loginAs === "siswa"
-                        ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-500/30 border border-green-400/30"
-                        : "bg-white/10 text-white/70 hover:bg-white/20 border border-white/10 hover:border-white/20"
-                    }`}>
-                    🎒 Siswa
-                  </button>
+              {/* Cuma muncul kalau buka via ?akses=guru — siswa gak akan
+                  liat opsi ini sama sekali di halaman login normal. */}
+              {showRoleToggle && (
+                <div className="mb-5">
+                  <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
+                    Login Sebagai
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setLoginAs("guru")}
+                      className={`flex-1 py-2.5 rounded-xl font-medium transition-all duration-300 ${
+                        loginAs === "guru"
+                          ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 border border-blue-400/30"
+                          : "bg-white/10 text-white/70 hover:bg-white/20 border border-white/10 hover:border-white/20"
+                      }`}>
+                      👨‍🏫 Guru
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginAs("siswa")}
+                      className={`flex-1 py-2.5 rounded-xl font-medium transition-all duration-300 ${
+                        loginAs === "siswa"
+                          ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-500/30 border border-green-400/30"
+                          : "bg-white/10 text-white/70 hover:bg-white/20 border border-white/10 hover:border-white/20"
+                      }`}>
+                      🎒 Siswa
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Username Field - Enhanced */}
               <div className="mb-5 relative group/input">
@@ -438,17 +459,6 @@ export const Login = ({ onLogin, onShowToast }) => {
                 )}
               </div>
 
-              {/* Info tambahan untuk siswa */}
-              {loginAs === "siswa" && (
-                <div className="mb-4 p-3 bg-blue-500/10 border border-blue-400/20 rounded-xl">
-                  <p className="text-blue-200/80 text-xs">
-                    💡 Masukkan <strong>NIS</strong> sebagai username dan
-                    password
-                    <strong> kelas7b</strong> (atau sesuai yang diberikan guru).
-                  </p>
-                </div>
-              )}
-
               {/* Error Message - Enhanced */}
               {errors.general && (
                 <div className="mb-5 p-4 bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 rounded-xl text-sm font-medium shadow-lg shadow-red-500/10 animate-pulse">
@@ -483,11 +493,7 @@ export const Login = ({ onLogin, onShowToast }) => {
               {/* Submit Button - Navy Classic */}
               <button
                 type="submit"
-                className={`relative w-full py-4 rounded-xl text-white font-bold transition-all duration-500 flex items-center justify-center shadow-xl hover:scale-[1.02] active:scale-[0.98] group/btn overflow-hidden ${
-                  loginAs === "siswa"
-                    ? "bg-gradient-to-r from-green-700 via-green-600 to-green-500 hover:from-green-600 hover:via-green-500 hover:to-green-400 shadow-green-900/40 hover:shadow-2xl hover:shadow-green-800/60"
-                    : "bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 hover:from-blue-800 hover:via-blue-700 hover:to-blue-600 shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-800/60"
-                } disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed`}
+                className={`relative w-full py-4 rounded-xl text-white font-bold transition-all duration-500 flex items-center justify-center shadow-xl hover:scale-[1.02] active:scale-[0.98] group/btn overflow-hidden bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 hover:from-blue-800 hover:via-blue-700 hover:to-blue-600 shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-800/60 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed`}
                 disabled={isLoading}>
                 {/* Animated gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
@@ -499,7 +505,7 @@ export const Login = ({ onLogin, onShowToast }) => {
                   </>
                 ) : (
                   <span className="relative z-10">
-                    {loginAs === "siswa" ? "🚀 Masuk sebagai Siswa" : "Login"}
+                    {loginAs === "siswa" ? "🚀 Masuk" : "Login"}
                   </span>
                 )}
               </button>
