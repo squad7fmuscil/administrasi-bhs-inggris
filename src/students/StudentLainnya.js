@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import useStudentProfile from "./useStudentProfile";
-import { DAY_NAMES, formatDateShort } from "./studentHelpers";
+import { DAY_NAMES, formatDateShort } from "./StudentHelpers";
 import { User, Users as UsersIcon, Bell } from "lucide-react";
 
 const SCHOOL_DAYS = DAY_NAMES.filter((d) => d !== "Minggu");

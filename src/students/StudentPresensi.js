@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import useStudentProfile from "./useStudentProfile";
-import { formatDateShort, getStatusMeta } from "./studentHelpers";
+import { formatDateShort, getStatusMeta } from "./StudentHelpers";
 
 export default function StudentPresensi() {
   const {
