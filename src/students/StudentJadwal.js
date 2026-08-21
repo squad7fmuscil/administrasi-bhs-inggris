@@ -20,8 +20,8 @@ const FRIDAY_TIMES = {
   9: { start: "", end: "" },
 };
 
-// Senin - Sabtu (sesuaikan kalau sekolah lo masuk Minggu / gak masuk Sabtu)
-const SCHOOL_DAYS = DAY_NAMES.filter((d) => d !== "Minggu");
+// Senin - Jumat (KBM cuma Senin-Jumat, Sabtu & Minggu libur)
+const SCHOOL_DAYS = DAY_NAMES.filter((d) => d !== "Minggu" && d !== "Sabtu");
 
 export default function StudentJadwal() {
   const {
@@ -32,7 +32,12 @@ export default function StudentJadwal() {
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeDay, setActiveDay] = useState(getDayName());
+  // Kalau hari ini bukan hari sekolah (mis. Sabtu/Minggu), default balik
+  // ke Senin biar gak nyangkut ke hari lain yang gak jelas asal-usulnya.
+  const today = getDayName();
+  const [activeDay, setActiveDay] = useState(
+    SCHOOL_DAYS.includes(today) ? today : "Senin",
+  );
 
   useEffect(() => {
     if (!student) return;

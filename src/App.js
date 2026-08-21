@@ -47,7 +47,7 @@ import StudentLayout from "./students/StudentLayout";
 import StudentDashboard from "./students/StudentDashboard";
 import StudentJadwal from "./students/StudentJadwal";
 import StudentPresensi from "./students/StudentPresensi";
-import StudentLainnya from "./students/StudentLainnya";
+import StudentAkun from "./students/StudentAkun";
 // ===========================================
 
 export default function App() {
@@ -183,7 +183,7 @@ export default function App() {
           case "student-presensi":
             return <StudentPresensi />;
           case "student-lainnya":
-            return <StudentLainnya />;
+            return <StudentAkun />;
           case "student-dashboard":
           default:
             return <StudentDashboard onPageChange={setCurrentPage} />;
