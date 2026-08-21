@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import useStudentProfile from "./useStudentProfile";
-import { DAY_NAMES, getDayName, isOngoing } from "./studentHelpers";
+import { DAY_NAMES, getDayName, isOngoing } from "./StudentHelpers";
 
 // Jumat jam pelajarannya beda (lebih pendek) dari hari lain — dipake buat
 // nimpa start_time/end_time dari database khusus pas activeDay === "Jumat".
