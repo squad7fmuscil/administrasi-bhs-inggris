@@ -62,20 +62,21 @@ export default function useStudentProfile() {
         // Catatan penting: `userData.id` di atas adalah users.id (dipake
         // buat login & buat FK di piket_schedule.siswa_id). TAPI tabel
         // "attendance" FK-nya ke students.id, yang beda dari users.id.
-        // Query tambahan ini ambil students.id lewat students.user_id,
-        // disimpen sebagai `studentRecordId` — dipake khusus buat query
-        // ke tabel "attendance". Field `id` yang lama TETAP users.id,
-        // gak diubah, biar gak ganggu tempat lain yang masih pake itu
-        // (misal piket_schedule).
+        // Query tambahan ini ambil data dari tabel "students" lewat
+        // students.user_id — sekalian ambil `nis` dan nama kelas
+        // (classes.grade, di-join lewat students.class_id) di query yang
+        // sama, biar gak nambah round-trip lagi. Field `id` yang lama
+        // TETAP users.id, gak diubah, biar gak ganggu tempat lain yang
+        // masih pake itu (misal piket_schedule).
         const { data: studentRow, error: studentRowErr } = await supabase
           .from("students")
-          .select("id")
+          .select("id, nis, class_id, classes:class_id (grade)")
           .eq("user_id", userData.id)
           .maybeSingle();
 
         if (studentRowErr) {
           console.error(
-            "[useStudentProfile] Gagal ambil students.id dari user_id:",
+            "[useStudentProfile] Gagal ambil data dari tabel students:",
             studentRowErr,
           );
         }
@@ -84,6 +85,9 @@ export default function useStudentProfile() {
           setStudent({
             ...userData,
             studentRecordId: studentRow?.id || null,
+            nis: studentRow?.nis || null,
+            classId: studentRow?.class_id || null,
+            kelas: studentRow?.class_id || null,
           });
           setLoading(false);
         }

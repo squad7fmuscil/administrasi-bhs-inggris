@@ -1,11 +1,12 @@
 // students/StudentLainnya.js
-// Menu "Lainnya": profil singkat, jadwal piket mingguan, dan semua
-// pengumuman (bukan cuma 3 terbaru kayak di dashboard).
+// Halaman "Akun": profil siswa + ganti password + keluar (lewat komponen
+// StudentProfile), jadwal piket mingguan, dan semua pengumuman.
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import useStudentProfile from "./useStudentProfile";
+import StudentProfile from "./StudentProfile";
 import { DAY_NAMES, formatDateShort } from "./StudentHelpers";
-import { User, Users as UsersIcon, Bell } from "lucide-react";
+import { Users as UsersIcon, Bell } from "lucide-react";
 
 const SCHOOL_DAYS = DAY_NAMES.filter((d) => d !== "Minggu");
 
@@ -91,23 +92,8 @@ export default function StudentLainnya() {
         </div>
       )}
 
-      {/* Profil */}
-      <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0">
-            <User size={22} className="text-blue-600" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-bold text-gray-800 truncate">
-              {student?.full_name}
-            </p>
-            <p className="text-xs text-gray-400">@{student?.username}</p>
-            <p className="text-xs text-gray-400">
-              Kelas {student?.homeroom_class_id || "-"}
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* Profil + Ganti Password + Keluar */}
+      <StudentProfile student={student} />
 
       {/* Piket mingguan */}
       <section>

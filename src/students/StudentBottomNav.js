@@ -6,14 +6,42 @@
 // state di App.js, bukan react-router. Pake <a href> bakal full page
 // reload ke URL yang gak ada, ujungnya blank/404.
 // ========================================================================
-import { Home, Calendar, ClipboardCheck, Grid3x3 } from "lucide-react";
+import { Home, Calendar, ClipboardCheck, User } from "lucide-react";
 
 export default function StudentBottomNav({ currentPage, onPageChange }) {
   const items = [
-    { id: "student-dashboard", label: "Home", icon: Home },
-    { id: "student-jadwal", label: "Jadwal", icon: Calendar },
-    { id: "student-presensi", label: "Presensi", icon: ClipboardCheck },
-    { id: "student-lainnya", label: "Lainnya", icon: Grid3x3 },
+    {
+      id: "student-dashboard",
+      label: "Home",
+      icon: Home,
+      activeText: "text-blue-600",
+      activeBg: "bg-blue-50",
+      inactiveText: "text-blue-300",
+    },
+    {
+      id: "student-jadwal",
+      label: "Jadwal",
+      icon: Calendar,
+      activeText: "text-purple-600",
+      activeBg: "bg-purple-50",
+      inactiveText: "text-purple-300",
+    },
+    {
+      id: "student-presensi",
+      label: "Presensi",
+      icon: ClipboardCheck,
+      activeText: "text-green-600",
+      activeBg: "bg-green-50",
+      inactiveText: "text-green-300",
+    },
+    {
+      id: "student-lainnya",
+      label: "Akun",
+      icon: User,
+      activeText: "text-orange-600",
+      activeBg: "bg-orange-50",
+      inactiveText: "text-orange-300",
+    },
   ];
 
   return (
@@ -24,21 +52,22 @@ export default function StudentBottomNav({ currentPage, onPageChange }) {
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
+          const textColor = isActive ? item.activeText : item.inactiveText;
           return (
             <button
               key={item.id}
               type="button"
               onClick={() => onPageChange(item.id)}
-              className="flex-1 flex flex-col items-center justify-center gap-1 py-0.5 min-w-0">
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 min-w-0 rounded-xl transition-colors ${
+                isActive ? item.activeBg : ""
+              }`}>
               <Icon
-                size={22}
-                strokeWidth={isActive ? 2.5 : 2}
-                className={isActive ? "text-blue-600" : "text-gray-400"}
+                size={23}
+                strokeWidth={isActive ? 2.5 : 2.2}
+                className={textColor}
               />
               <span
-                className={`text-[11px] font-medium truncate max-w-full ${
-                  isActive ? "text-blue-600" : "text-gray-400"
-                }`}>
+                className={`text-[11px] font-semibold truncate max-w-full ${textColor}`}>
                 {item.label}
               </span>
             </button>

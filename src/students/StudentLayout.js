@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { User, LogOut } from "lucide-react";
 import StudentBottomNav from "./StudentBottomNav";
+import StudentSidebar from "./StudentSidebar";
 
 const PAGE_TITLES = {
   "student-dashboard": "Beranda",
@@ -32,32 +33,49 @@ export default function StudentLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 lg:pb-8">
-      {/* ====== HEADER ====== */}
-      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-40 shadow-lg">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-              <User size={18} />
+    <div className="min-h-screen bg-gray-50 pb-24 lg:pb-0">
+      {/* ====== SIDEBAR (desktop only, hidden di HP) ====== */}
+      <StudentSidebar
+        currentPage={currentPage}
+        onPageChange={onPageChange}
+        currentUser={currentUser}
+        onLogout={() => setShowLogoutConfirm(true)}
+      />
+
+      {/* ====== KONTEN UTAMA — digeser ke kanan di desktop biar gak
+          ketiban sidebar (lg:w-64 -> lg:pl-64) ====== */}
+      <div className="lg:pl-64">
+        {/* ====== HEADER ====== */}
+        <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 shadow-lg">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center shrink-0 lg:hidden">
+                <User size={18} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-sm font-bold leading-tight truncate">
+                  {pageTitle}
+                </h1>
+                <p className="text-blue-100 text-xs truncate">
+                  {currentUser?.full_name || "Siswa"} · Kelas{" "}
+                  {currentUser?.homeroom_class_id || "-"}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1 className="text-sm font-bold leading-tight truncate">
-                {pageTitle}
-              </h1>
-              <p className="text-blue-100 text-xs truncate">
-                {currentUser?.full_name || "Siswa"} · Kelas{" "}
-                {currentUser?.homeroom_class_id || "-"}
-              </p>
-            </div>
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-xs font-medium shrink-0 lg:hidden">
+              <LogOut size={14} />
+              Keluar
+            </button>
           </div>
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-xs font-medium shrink-0">
-            <LogOut size={14} />
-            Keluar
-          </button>
-        </div>
-      </header>
+        </header>
+
+        {/* ====== CONTENT ====== */}
+        <main className="max-w-lg lg:max-w-3xl mx-auto px-4 py-5 space-y-5">
+          {children}
+        </main>
+      </div>
 
       {/* ====== LOGOUT CONFIRMATION MODAL ====== */}
       {showLogoutConfirm && (
@@ -90,10 +108,7 @@ export default function StudentLayout({
         </div>
       )}
 
-      {/* ====== CONTENT ====== */}
-      <main className="max-w-lg mx-auto px-4 py-5 space-y-5">{children}</main>
-
-      {/* ====== BOTTOM NAV ====== */}
+      {/* ====== BOTTOM NAV (mobile only, sudah lg:hidden bawaan) ====== */}
       <StudentBottomNav currentPage={currentPage} onPageChange={onPageChange} />
     </div>
   );

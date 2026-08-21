@@ -62,7 +62,7 @@ export const getStatusMeta = (status) => {
       icon: XCircle,
     };
   return {
-    label: "Belum ada data",
+    label: "Belum Ada Data Presensi",
     color: "bg-gray-100 text-gray-600 border-gray-300",
     icon: AlertCircle,
   };
