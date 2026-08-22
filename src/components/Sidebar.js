@@ -77,12 +77,6 @@ export default function Sidebar({
           roles: ["admin", "teacher"],
         },
         {
-          id: "student-profile-completion",
-          label: "Kelengkapan Data Siswa",
-          icon: FileStack,
-          roles: ["admin", "teacher"],
-        },
-        {
           id: "attendance",
           label: "Presensi Siswa",
           icon: ClipboardCheck,
@@ -110,6 +104,12 @@ export default function Sidebar({
           id: "report",
           label: "Laporan",
           icon: BarChart3,
+          roles: ["admin", "teacher"],
+        },
+        {
+          id: "student-profile-completion",
+          label: "Kelengkapan Data Siswa",
+          icon: FileStack,
           roles: ["admin", "teacher"],
         },
       ],
