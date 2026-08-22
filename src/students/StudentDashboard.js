@@ -33,17 +33,12 @@ const getGreetingWord = () => {
   return "Selamat Malam";
 };
 
-// Nama lengkap kalau cuma 1-2 kata (misal "Ahmad Fauzan"). Kalau lebih
-// dari 2 kata (misal "Ahmad Fauzan Ramadhan"), kata pertama tetep utuh,
-// sisanya disingkat jadi huruf depan aja (jadi "Ahmad F. R.") biar gak
-// kepanjangan di layout greeting yang sempit.
+// Nama depan doang buat greeting — apapun panjang nama lengkapnya
+// (2 kata atau 4 kata), hasilnya tetep pendek & konsisten, ketimbang
+// disingkat jadi inisial (mis. "Ahmad F. R.") yang kurang enak dilihat.
 const getDisplayName = (fullName) => {
   if (!fullName) return "Siswa";
-  const words = fullName.trim().split(/\s+/);
-  if (words.length <= 2) return fullName.trim();
-  const [first, ...rest] = words;
-  const initials = rest.map((w) => `${w[0].toUpperCase()}.`).join(" ");
-  return `${first} ${initials}`;
+  return fullName.trim().split(/\s+/)[0];
 };
 
 export default function StudentDashboard({ onPageChange }) {
