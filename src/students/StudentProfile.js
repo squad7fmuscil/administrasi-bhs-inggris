@@ -362,7 +362,7 @@ export function LogoutSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-gray-600">Yakin mau keluar?</p>
+      <p className="text-sm text-gray-600">Yakin Mau Keluar?</p>
       <div className="flex gap-2">
         <button
           type="button"
