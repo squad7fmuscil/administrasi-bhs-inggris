@@ -149,6 +149,19 @@ export const Login = ({ onLogin, onShowToast }) => {
           throw new Error("NIS atau password salah!");
         }
 
+        // Catat waktu login siswa. Sengaja gak di-throw kalau gagal —
+        // jangan sampe update last_login gagal bikin siswa gak bisa
+        // login sama sekali (sama kayak prinsip recordDeviceLogin
+        // di bawah).
+        const { error: updateErr } = await supabase
+          .from("users")
+          .update({ last_login: new Date().toISOString() })
+          .eq("id", data.id);
+
+        if (updateErr) {
+          console.error("Gagal update last_login siswa:", updateErr);
+        }
+
         // Simpen session siswa (localStorage + cookie fallback,
         // biar tetep kesimpen walau localStorage diblokir browser)
         const saved = saveStudentSession(data);
@@ -200,6 +213,17 @@ export const Login = ({ onLogin, onShowToast }) => {
         throw new Error(
           "Akun ini bukan untuk guru atau admin. Silakan login sebagai siswa.",
         );
+      }
+
+      // Catat waktu login. Sengaja gak di-throw kalau gagal — jangan
+      // sampe update last_login gagal bikin guru/admin gak bisa login.
+      const { error: updateErr } = await supabase
+        .from("users")
+        .update({ last_login: new Date().toISOString() })
+        .eq("id", data.id);
+
+      if (updateErr) {
+        console.error("Gagal update last_login:", updateErr);
       }
 
       const userData = {

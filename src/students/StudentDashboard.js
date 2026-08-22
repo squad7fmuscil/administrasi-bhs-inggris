@@ -321,7 +321,7 @@ export default function StudentDashboard({ onPageChange }) {
 
         {attendanceRate !== null &&
           attendanceRate >= ATTENDANCE_GOOD_THRESHOLD && (
-            <div className="relative mt-3.5 flex items-center gap-2 bg-emerald-500/90 text-white text-xs font-semibold px-3.5 py-2 rounded-xl w-fit">
+            <div className="relative mt-3.5 flex items-center justify-center gap-2 bg-emerald-500/90 text-white text-xs font-semibold px-3.5 py-2 rounded-xl w-fit mx-auto">
               <span className="text-sm leading-none">🌟</span>
               <span>
                 Kehadiran Kamu Bulan Ini Bagus Sekali ({attendanceRate}%)
@@ -343,21 +343,25 @@ export default function StudentDashboard({ onPageChange }) {
       </section>
 
       {/* ====== PIKET HARI INI ====== */}
-      {piketNames.length > 0 && (
-        <section>
+      <section>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-7 h-7 shrink-0 rounded-full bg-orange-100 flex items-center justify-center">
+            <UsersIcon size={14} className="text-orange-500" />
+          </div>
+          <h2 className="text-base font-bold text-gray-800">Piket Hari Ini</h2>
+        </div>
+
+        {piketNames.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm shadow-sm">
+            🧹 Tidak Ada Jadwal Piket Hari Ini.
+          </div>
+        ) : (
           <div
             className={`rounded-2xl border p-4 shadow-sm ${
               isSayaPiket
                 ? "bg-orange-50 border-orange-300"
                 : "bg-white border-gray-100"
             }`}>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 shrink-0 rounded-full bg-orange-100 flex items-center justify-center">
-                <UsersIcon size={14} className="text-orange-500" />
-              </div>
-              <p className="text-sm font-bold text-gray-800">Piket Hari Ini</p>
-            </div>
-
             {/* Notice khusus kalau siswa yang login kebagian piket hari ini */}
             {isSayaPiket && (
               <div className="flex items-center gap-2 bg-orange-500 text-white text-xs font-semibold px-3 py-2.5 rounded-xl mb-3">
@@ -406,8 +410,8 @@ export default function StudentDashboard({ onPageChange }) {
               </p>
             )}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* ====== JADWAL HARI INI ====== */}
       <section>
@@ -511,7 +515,9 @@ export default function StudentDashboard({ onPageChange }) {
                 <p className="font-semibold text-gray-800 text-sm">
                   {item.title}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">{item.content}</p>
+                <p className="text-sm text-gray-700 mt-1 text-justify">
+                  {item.content}
+                </p>
               </div>
             ))}
           </div>

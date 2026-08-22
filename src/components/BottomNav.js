@@ -1,16 +1,7 @@
-import {
-  Home,
-  ClipboardCheck,
-  UserCheck,
-  BookOpenText,
-  LogOut,
-} from "lucide-react";
+import { Home, Settings, Monitor, LogOut } from "lucide-react";
 
-// ✅ NEW: Bottom navbar khusus mobile (lg:hidden), isinya 5 menu paling
-// sering dipake: Home, Presensi Siswa, Presensi Guru, Jurnal, Logout.
-// "Laporan" sengaja gak dimasukin karena jarang dibuka, tetep bisa lewat
-// sidebar. Logout tetep aman karena udah pake modal konfirmasi (handleLogout
-// di Layout.js yang munculin modal, bukan langsung logout).
+// ✅ NEW: Bottom navbar khusus mobile (lg:hidden), isinya menu utama admin:
+// Home, Pengaturan, Monitor System, Logout.
 //
 // ✅ Tiap tombol punya warna pastel sendiri (senada sama card "Aksi Cepat"
 // yang lama) biar gampang dibedain sekilas, dan label teksnya dibikin gelap
@@ -28,31 +19,22 @@ export default function BottomNav({ currentPage, onPageChange, onLogout }) {
       labelColor: "text-indigo-700",
     },
     {
-      id: "attendance",
-      label: "P. Siswa",
-      icon: ClipboardCheck,
-      bg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
-      activeBg: "bg-emerald-500",
-      labelColor: "text-emerald-700",
+      id: "setting",
+      label: "Pengaturan",
+      icon: Settings,
+      bg: "bg-amber-100",
+      iconColor: "text-amber-600",
+      activeBg: "bg-amber-500",
+      labelColor: "text-amber-700",
     },
     {
-      id: "teacherattendance",
-      label: "P. Guru",
-      icon: UserCheck,
+      id: "sistem",
+      label: "Monitor",
+      icon: Monitor,
       bg: "bg-blue-100",
       iconColor: "text-blue-600",
       activeBg: "bg-blue-500",
       labelColor: "text-blue-700",
-    },
-    {
-      id: "teachingjournal",
-      label: "Jurnal",
-      icon: BookOpenText,
-      bg: "bg-rose-100",
-      iconColor: "text-rose-600",
-      activeBg: "bg-rose-500",
-      labelColor: "text-rose-700",
     },
   ];
 
@@ -87,11 +69,11 @@ export default function BottomNav({ currentPage, onPageChange, onLogout }) {
           );
         })}
 
-        {/* Logout - warna pastel merah biar tetap keliatan beda kategori */}
+        {/* Logout - soft rose biar tetap keliatan beda kategori tapi gak terlalu mencolok */}
         <button
           onClick={onLogout}
           className="flex flex-col items-center justify-center flex-1 min-w-0 py-0.5 gap-1">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-red-100 text-red-600 shadow-sm">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600 border border-rose-200 shadow-sm">
             <LogOut size={20} strokeWidth={2.2} />
           </div>
           <span className="text-[11px] font-bold text-slate-700 truncate max-w-full">

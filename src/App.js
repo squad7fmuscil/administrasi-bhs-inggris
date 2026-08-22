@@ -365,7 +365,7 @@ export default function App() {
       // ======================================
 
       case "setting":
-        return <Setting currentUser={currentUser} />;
+        return <Setting currentUser={currentUser} showToast={showToast} />;
 
       case "sistem":
         return <MonitorSistem currentUser={currentUser} />;

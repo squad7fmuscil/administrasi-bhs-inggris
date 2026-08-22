@@ -76,7 +76,9 @@ export default function StudentPengumuman({ student }) {
               {formatDateShort(item.created_at)}
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-1">{item.content}</p>
+          <p className="text-sm text-gray-700 mt-1 text-justify">
+            {item.content}
+          </p>
         </div>
       ))}
     </div>

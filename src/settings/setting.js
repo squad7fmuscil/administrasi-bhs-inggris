@@ -7,14 +7,16 @@ import {
   Building2,
   Sliders,
   Wrench,
+  Users,
 } from "lucide-react";
 import ProfileTab from "./ProfileTab";
 import AcademicYearTab from "./AcademicYearTab";
 import SchoolManagementTab from "./SchoolManagementTab";
 import SchoolSettingsTab from "./SchoolSettingsTab";
 import SystemTab from "./SystemTab";
+import ActiveUsersTab from "./ActiveUsersTab";
 
-const Setting = () => {
+const Setting = ({ showToast }) => {
   const [activeTab, setActiveTab] = useState("profile");
 
   const tabs = [
@@ -23,6 +25,7 @@ const Setting = () => {
     { id: "school", label: "Data Sekolah", icon: Building2 },
     { id: "settings", label: "Pengaturan Sekolah", icon: Sliders },
     { id: "system", label: "Sistem", icon: Wrench },
+    { id: "activeusers", label: "Active Users", icon: Users },
   ];
 
   const renderTabContent = () => {
@@ -37,6 +40,8 @@ const Setting = () => {
         return <SchoolSettingsTab />;
       case "system":
         return <SystemTab />;
+      case "activeusers":
+        return <ActiveUsersTab showToast={showToast} />;
       default:
         return <ProfileTab />;
     }
