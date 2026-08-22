@@ -9,6 +9,7 @@ import Dashboard from "./components/Dashboard";
 
 // Main Pages
 import Students from "./page/Students";
+import StudentProfileCompletion from "./components/StudentProfileCompletion";
 import AttendanceMain from "./page/attendance/AttendanceMain";
 import TeacherAttendance from "./attendance-teacher/TeacherAttendance";
 import GradeMain from "./page/grade/GradeMain";
@@ -222,6 +223,9 @@ export default function App() {
 
       case "students":
         return <Students currentUser={currentUser} />;
+
+      case "student-profile-completion":
+        return <StudentProfileCompletion currentUser={currentUser} />;
 
       case "attendance":
         return <AttendanceMain user={currentUser} onShowToast={showToast} />;
