@@ -91,7 +91,7 @@ export default function useStudentProfile() {
       // (maybeSingle return null, bukan error).
       const { data: detailRow, error: detailErr } = await supabase
         .from("student_profile_details")
-        .select("alamat, no_hp, nama_ortu, no_hp_ortu")
+        .select("alamat, no_hp, nama_ortu, no_hp_ortu, sekolah_asal")
         .eq("student_id", userData.id)
         .maybeSingle();
 
@@ -113,6 +113,7 @@ export default function useStudentProfile() {
           no_hp: detailRow?.no_hp || "",
           nama_ortu: detailRow?.nama_ortu || "",
           no_hp_ortu: detailRow?.no_hp_ortu || "",
+          sekolah_asal: detailRow?.sekolah_asal || "",
         });
         setLoading(false);
       }

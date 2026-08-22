@@ -23,6 +23,36 @@ import { supabase } from "../supabaseClient";
 import { clearStudentSession } from "../utils/studentSession";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
+// --- Helper validasi & normalisasi nomor HP Indonesia -------------------
+// Nerima input dalam berbagai format umum (08xxxxxxxxxx, +62xxxxxxxxxxx,
+// 62xxxxxxxxxxx, atau ada spasi/strip di tengah kayak 0812-3456-7890),
+// terus dirapiin jadi format baku internasional "+62xxxxxxxxxxx" sebelum
+// disimpen ke DB biar konsisten & resmi (gak ada yang kesimpen 08...
+// sementara yang lain +62...).
+function normalizePhone(raw) {
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, ""); // buang semua selain angka
+  let national; // nomor nasional tanpa kode negara, diawali "8"
+  if (digits.startsWith("0")) {
+    national = digits.slice(1);
+  } else if (digits.startsWith("62")) {
+    national = digits.slice(2);
+  } else {
+    // kadang orang nulis tanpa 0 di depan, misal "812xxxx"
+    national = digits;
+  }
+  return "+62" + national;
+}
+
+// Nomor HP Indonesia yang valid: nomor nasional diawali 8 (mobile),
+// panjang total 9-12 digit setelah kode negara (contoh: +6281234567890).
+// Longgar dikit di batas atas/bawah biar gak nolak nomor yang beneran
+// valid tapi agak pendek/panjang.
+function isValidPhone(raw) {
+  const normalized = normalizePhone(raw);
+  return /^\+628\d{8,11}$/.test(normalized);
+}
+
 // --- Isi menu "Profile" -------------------------------------------------
 // `onUpdated` (opsional): dipanggil abis form data tambahan berhasil
 // disimpen, biasanya diisi `refetch` dari useStudentProfile() supaya
@@ -36,6 +66,7 @@ export function ProfileInfo({ student, onUpdated }) {
     no_hp: "",
     nama_ortu: "",
     no_hp_ortu: "",
+    sekolah_asal: "",
   });
 
   // Sinkronin form pas data student berubah (pertama kali load, atau
@@ -46,6 +77,7 @@ export function ProfileInfo({ student, onUpdated }) {
       no_hp: student?.no_hp || "",
       nama_ortu: student?.nama_ortu || "",
       no_hp_ortu: student?.no_hp_ortu || "",
+      sekolah_asal: student?.sekolah_asal || "",
     });
   }, [student]);
 
@@ -57,6 +89,7 @@ export function ProfileInfo({ student, onUpdated }) {
       label: "Kelas",
       value: student?.classes?.grade || student?.homeroom_class_id || "-",
     },
+    { label: "Sekolah Asal", value: student?.sekolah_asal || "-" },
     { label: "Alamat Lengkap", value: student?.alamat || "-" },
     { label: "No. HP Siswa (Kalau Ada)", value: student?.no_hp || "-" },
     { label: "Nama Orang Tua/Wali", value: student?.nama_ortu || "-" },
@@ -72,6 +105,22 @@ export function ProfileInfo({ student, onUpdated }) {
       return;
     }
 
+    // Validasi nomor HP (kalau diisi) sebelum kirim ke database — biar
+    // gak ada nomor asal-asalan/kepotong kesimpen. Kosongin field-nya
+    // tetep boleh (opsional), jadi cuma divalidasi kalau ada isinya.
+    if (form.no_hp && !isValidPhone(form.no_hp)) {
+      setFormError(
+        "No. HP Siswa tidak valid. Contoh format yang benar: 08123456789.",
+      );
+      return;
+    }
+    if (form.no_hp_ortu && !isValidPhone(form.no_hp_ortu)) {
+      setFormError(
+        "No. HP Orang Tua/Wali tidak valid. Contoh format yang benar: 08123456789.",
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Upsert: 1 baris per siswa di student_profile_details
@@ -83,9 +132,12 @@ export function ProfileInfo({ student, onUpdated }) {
           {
             student_id: student.id,
             alamat: form.alamat || null,
-            no_hp: form.no_hp || null,
+            no_hp: form.no_hp ? normalizePhone(form.no_hp) : null,
             nama_ortu: form.nama_ortu || null,
-            no_hp_ortu: form.no_hp_ortu || null,
+            no_hp_ortu: form.no_hp_ortu
+              ? normalizePhone(form.no_hp_ortu)
+              : null,
+            sekolah_asal: form.sekolah_asal || null,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "student_id" },
@@ -111,6 +163,21 @@ export function ProfileInfo({ student, onUpdated }) {
             {formError}
           </div>
         )}
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-600 mb-1">
+            Sekolah Asal
+          </label>
+          <input
+            type="text"
+            value={form.sekolah_asal}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, sekolah_asal: e.target.value }))
+            }
+            placeholder="Contoh: SDN 1 Cililin"
+            className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+          />
+        </div>
 
         <div>
           <label className="block text-sm font-semibold text-gray-600 mb-1">
