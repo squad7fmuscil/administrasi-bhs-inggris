@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { saveStudentSession } from "../utils/studentSession";
+import { recordDeviceLogin } from "../utils/studentDevices";
 import Logo from "./Logo";
 import backgroundImage from "../assets/Background.jpeg";
 
@@ -157,6 +158,12 @@ export const Login = ({ onLogin, onShowToast }) => {
             "Browser ini memblokir penyimpanan sesi login. Coba matikan mode private browsing, atau ubah pengaturan privasi/cookie browser lo, lalu coba lagi.",
           );
         }
+
+        // Catat device ini biar muncul di halaman "Perangkat Terhubung".
+        // Sengaja gak di-throw kalau gagal (lihat komentar di
+        // utils/studentDevices.js) — jangan sampe gagal nyatet device
+        // bikin siswa gak bisa login sama sekali.
+        await recordDeviceLogin(data.id);
 
         // Refresh halaman biar App.js detect session siswa
         window.location.href = "/";

@@ -1,37 +1,25 @@
-// components/SaranMasukanSiswa.js (sesuaikan folder kalau beda sama
-// DashboardHomeTeacher.js — file ini ditaruh 1 folder yang sama)
+// students/StudentSaran.js
 //
-// Kebalikan dari PengumumanWaliKelas: kalau itu guru NULIS pengumuman
-// buat siswa, ini guru MEMBACA saran/masukan yang dikirim siswa dari
-// tabel `saran_masukan`. Difilter per kelas (classId = homeroom_class_id
-// wali kelas yang lagi login).
+// Isi menu "Saran/Masukan" di halaman Akun siswa — "kotak saran": siswa
+// nulis & kirim pesan ke wali kelas, disimpen ke tabel `saran_masukan`
+// (tabel yang sama yang dibaca guru lewat komponen SaranMasukanSiswa
+// punya guru — file itu TERPISAH, jangan disatuin lagi ke sini, karena
+// itu nampilin saran SEMUA siswa sekelas + bisa ubah status, yang gak
+// boleh keliatan/diutak-atik siswa).
 //
-// Klik badge status di tiap kartu buat siklus statusnya:
-// baru -> dibaca -> ditindaklanjuti -> baru (lagi).
-import React, { useState, useEffect } from "react";
+// Siswa cuma bisa: kirim saran baru, dan liat riwayat saran DIA SENDIRI
+// (read-only, gak bisa ubah status — itu hak wali kelas).
+import React, { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import { Loader2, Send } from "lucide-react";
 
 const STATUS_META = {
-  baru: {
-    label: "Baru",
-    badge: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
-  },
-  dibaca: {
-    label: "Dibaca",
-    badge:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  },
+  baru: { label: "Baru", badge: "bg-rose-100 text-rose-700" },
+  dibaca: { label: "Dibaca", badge: "bg-amber-100 text-amber-700" },
   ditindaklanjuti: {
     label: "Ditindaklanjuti",
-    badge:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    badge: "bg-emerald-100 text-emerald-700",
   },
-};
-
-const cycleStatus = (current) => {
-  if (current === "baru") return "dibaca";
-  if (current === "dibaca") return "ditindaklanjuti";
-  return "baru";
 };
 
 const formatDateTime = (iso) => {
@@ -44,120 +32,154 @@ const formatDateTime = (iso) => {
   });
 };
 
-export default function SaranMasukanSiswa({ classId }) {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [updatingId, setUpdatingId] = useState(null);
+export default function StudentSaran({ student }) {
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const loadHistory = useCallback(async () => {
+    if (!student?.id) return;
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from("saran_masukan")
+        .select("id, message, status, created_at")
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (err) {
+      console.error("[StudentSaran] Gagal ambil riwayat saran:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [student?.id]);
 
   useEffect(() => {
-    if (!classId) return;
+    loadHistory();
+  }, [loadHistory]);
 
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data, error: err } = await supabase
-          .from("saran_masukan")
-          .select(
-            "id, message, status, created_at, users:student_id (full_name)",
-          )
-          .eq("class_id", classId)
-          .order("created_at", { ascending: false })
-          .limit(30);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError(null);
+    setSubmitSuccess(false);
 
-        if (err) throw err;
-        setItems(data || []);
-      } catch (err) {
-        console.error("[SaranMasukanSiswa] Gagal ambil saran/masukan:", err);
-        setError("Gagal memuat saran/masukan.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!student?.id) {
+      setSubmitError("Sesi tidak ketemu, silakan login ulang.");
+      return;
+    }
+    if (!message.trim()) {
+      setSubmitError("Tulis dulu saran/masukannya ya.");
+      return;
+    }
 
-    load();
-  }, [classId]);
-
-  const handleStatusClick = async (item) => {
-    const nextStatus = cycleStatus(item.status);
-    setUpdatingId(item.id);
+    setSubmitting(true);
     try {
-      const { error: err } = await supabase
-        .from("saran_masukan")
-        .update({ status: nextStatus })
-        .eq("id", item.id);
+      const { error } = await supabase.from("saran_masukan").insert({
+        student_id: student.id,
+        class_id: student.homeroom_class_id,
+        message: message.trim(),
+        status: "baru",
+      });
 
-      if (err) throw err;
-      setItems((prev) =>
-        prev.map((it) =>
-          it.id === item.id ? { ...it, status: nextStatus } : it,
-        ),
-      );
+      if (error) throw error;
+
+      setMessage("");
+      setSubmitSuccess(true);
+      loadHistory();
     } catch (err) {
-      console.error("[SaranMasukanSiswa] Gagal update status:", err);
+      console.error("[StudentSaran] Gagal kirim saran:", err);
+      setSubmitError("Gagal mengirim saran. Coba lagi.");
     } finally {
-      setUpdatingId(null);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl shadow-md p-4 sm:p-6 border border-slate-100 dark:border-slate-700 min-w-0">
-      <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
-        <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center min-w-0">
-          <span className="w-1 h-5 sm:h-6 bg-gradient-to-b from-sky-500 to-blue-500 rounded-full mr-3 shrink-0"></span>
-          <span className="truncate">Saran/Masukan Siswa</span>
-        </h2>
-      </div>
+    <div className="space-y-5">
+      {/* Form kirim saran baru */}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {submitError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+            {submitError}
+          </div>
+        )}
+        {submitSuccess && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg text-xs">
+            Saran berhasil dikirim ke wali kelas.
+          </div>
+        )}
 
-      {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-600 mb-1">
+            Tulis Saran/Masukan
+          </label>
+          <textarea
+            rows={4}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Tulis saran atau masukan buat wali kelas di sini..."
+            className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+          />
         </div>
-      ) : error ? (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg text-sm">
-          ⚠️ {error}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="text-center py-8 sm:py-10 text-slate-500 dark:text-slate-400">
-          <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            Belum ada saran/masukan
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg disabled:opacity-60">
+          {submitting ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Send size={16} />
+          )}
+          {submitting ? "Mengirim..." : "Kirim Saran"}
+        </button>
+      </form>
+
+      {/* Riwayat saran yang pernah dikirim siswa ini sendiri */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-600 mb-2">
+          Riwayat Saran Kamu
+        </h3>
+
+        {loadingHistory ? (
+          <div className="flex items-center justify-center py-6">
+            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">
+            Belum ada saran yang dikirim.
           </p>
-          <p className="text-sm">
-            Saran dari siswa kelas ini bakal muncul di sini
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2.5 sm:space-y-3 max-h-96 overflow-y-auto">
-          {items.map((item) => {
-            const meta = STATUS_META[item.status] || STATUS_META.baru;
-            return (
-              <div
-                key={item.id}
-                className="p-3 sm:p-4 bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-950/40 dark:to-blue-950/30 rounded-xl border border-sky-100 dark:border-sky-900/50 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                    {item.users?.full_name || "Siswa"}
-                  </span>
-                  <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
-                    {formatDateTime(item.created_at)}
-                  </span>
+        ) : (
+          <div className="space-y-2.5">
+            {history.map((item) => {
+              const meta = STATUS_META[item.status] || STATUS_META.baru;
+              return (
+                <div
+                  key={item.id}
+                  className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-xs text-gray-400">
+                      {formatDateTime(item.created_at)}
+                    </span>
+                    <span
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${meta.badge}`}>
+                      {meta.label}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700">{item.message}</p>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                  {item.message}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleStatusClick(item)}
-                  disabled={updatingId === item.id}
-                  className={`mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full disabled:opacity-50 ${meta.badge}`}>
-                  {updatingId === item.id ? "Menyimpan..." : meta.label}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

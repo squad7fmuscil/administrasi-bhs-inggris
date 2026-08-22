@@ -67,13 +67,22 @@ export default function StudentPiket({ student }) {
   return (
     <div className="divide-y divide-gray-50">
       {piketByDay.map(({ day, names }) => (
-        <div key={day} className="flex items-start justify-between py-2.5">
-          <span className="text-sm font-semibold text-gray-700 w-20 shrink-0">
-            {day}
-          </span>
-          <span className="text-sm text-gray-500 text-right">
-            {names.length > 0 ? names.join(" · ") : "-"}
-          </span>
+        <div key={day} className="py-2.5">
+          <span className="text-sm font-semibold text-gray-700">{day}</span>
+          <div className="mt-1.5 space-y-1 pl-1">
+            {names.length > 0 ? (
+              names.map((name, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-orange-400 text-lg leading-[1.1] shrink-0">
+                    •
+                  </span>
+                  <span className="text-sm text-gray-500">{name}</span>
+                </div>
+              ))
+            ) : (
+              <span className="text-sm text-gray-400">-</span>
+            )}
+          </div>
         </div>
       ))}
     </div>

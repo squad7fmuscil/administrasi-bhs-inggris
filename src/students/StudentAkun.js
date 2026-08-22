@@ -1,13 +1,12 @@
 // students/StudentAkun.js
-// (dulu bernama StudentLainnya.js — di-rename biar sesuai isinya sekarang)
-// Halaman "Akun" — daftar menu accordion: Profile, Ganti Password,
-// Perangkat Terhubung, Jadwal Piket, Pengumuman, Saran/Masukan, Keluar.
-// Cuma 1 menu yang boleh kebuka dalam satu waktu. Isi tiap menu baru
-// di-mount (jadi baru fetch data-nya kalau ada) pas menunya diklik —
-// bukan langsung semua kebuka & fetch pas halaman ini pertama kali dibuka.
+// Halaman "Akun" — 2 tampilan:
+//   1. List menu (Profile, Ganti Password, dst) — tampilan awal.
+//   2. Detail 1 menu doang, fullscreen fokus ke situ, menu lain ilang,
+//      ada tombol "Kembali" buat balik ke list.
+// Isi tiap menu baru di-mount (jadi baru fetch data-nya kalau ada) pas
+// menunya diklik — bukan langsung semua ke-fetch pas halaman ini dibuka.
 import React, { useState } from "react";
 import useStudentProfile from "./useStudentProfile";
-import StudentAccordionItem from "./StudentAccordionItem";
 import {
   ProfileInfo,
   ChangePasswordForm,
@@ -25,6 +24,8 @@ import {
   Bell,
   MessageSquare,
   LogOut,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 
 const MENUS = [
@@ -85,12 +86,9 @@ export default function StudentAkun() {
     student,
     loading: profileLoading,
     error: profileError,
+    refetch: refetchProfile,
   } = useStudentProfile();
-  const [openMenu, setOpenMenu] = useState(null);
-
-  const toggleMenu = (key) => {
-    setOpenMenu((prev) => (prev === key ? null : key));
-  };
+  const [activeMenu, setActiveMenu] = useState(null);
 
   if (profileLoading) {
     return (
@@ -111,11 +109,11 @@ export default function StudentAkun() {
   const renderContent = (key) => {
     switch (key) {
       case "profile":
-        return <ProfileInfo student={student} />;
+        return <ProfileInfo student={student} onUpdated={refetchProfile} />;
       case "password":
         return <ChangePasswordForm student={student} />;
       case "devices":
-        return <StudentPerangkatTerhubung />;
+        return <StudentPerangkatTerhubung student={student} />;
       case "piket":
         return <StudentPiket student={student} />;
       case "pengumuman":
@@ -129,20 +127,62 @@ export default function StudentAkun() {
     }
   };
 
+  // ---- Tampilan detail: fokus ke 1 menu doang, menu lain gak muncul ----
+  if (activeMenu) {
+    const menu = MENUS.find((m) => m.key === activeMenu);
+    const Icon = menu.icon;
+
+    return (
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setActiveMenu(null)}
+          className="flex items-center gap-1 text-sm font-semibold text-gray-500">
+          <ChevronLeft size={18} />
+          Kembali
+        </button>
+
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-3 p-4 border-b border-gray-50">
+            <div
+              className={`w-9 h-9 ${menu.iconBgClass} rounded-full flex items-center justify-center shrink-0`}>
+              <Icon size={18} className={menu.iconColorClass} />
+            </div>
+            <span
+              className={`text-sm font-semibold ${
+                menu.danger ? "text-red-600" : "text-gray-700"
+              }`}>
+              {menu.title}
+            </span>
+          </div>
+          <div className="p-4">{renderContent(activeMenu)}</div>
+        </section>
+      </div>
+    );
+  }
+
+  // ---- Tampilan list: semua menu, belum ada yang dipilih ----
   return (
-    <div className="space-y-3">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
       {MENUS.map(
         ({ key, title, icon: Icon, iconBgClass, iconColorClass, danger }) => (
-          <StudentAccordionItem
+          <button
             key={key}
-            title={title}
-            icon={<Icon size={18} className={iconColorClass} />}
-            iconBgClass={iconBgClass}
-            titleClass={danger ? "text-red-600" : "text-gray-700"}
-            open={openMenu === key}
-            onToggle={() => toggleMenu(key)}>
-            {renderContent(key)}
-          </StudentAccordionItem>
+            type="button"
+            onClick={() => setActiveMenu(key)}
+            className="w-full flex items-center gap-3 p-4 text-left">
+            <div
+              className={`w-9 h-9 ${iconBgClass} rounded-full flex items-center justify-center shrink-0`}>
+              <Icon size={18} className={iconColorClass} />
+            </div>
+            <span
+              className={`text-sm font-semibold flex-1 ${
+                danger ? "text-red-600" : "text-gray-700"
+              }`}>
+              {title}
+            </span>
+            <ChevronRight size={18} className="text-gray-400 shrink-0" />
+          </button>
         ),
       )}
     </div>

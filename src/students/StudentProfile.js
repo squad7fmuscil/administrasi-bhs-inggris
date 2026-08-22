@@ -18,13 +18,37 @@
 //   - Untuk sekarang kode di bawah masih update langsung ke tabel `users`
 //     supaya UI-nya jalan, tapi tandain ini sebagai TODO keamanan.
 // ========================================================================
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { clearStudentSession } from "../utils/studentSession";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 // --- Isi menu "Profile" -------------------------------------------------
-export function ProfileInfo({ student }) {
+// `onUpdated` (opsional): dipanggil abis form data tambahan berhasil
+// disimpen, biasanya diisi `refetch` dari useStudentProfile() supaya
+// data yang tampil langsung ke-update tanpa reload halaman.
+export function ProfileInfo({ student, onUpdated }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [form, setForm] = useState({
+    alamat: "",
+    no_hp: "",
+    nama_ortu: "",
+    no_hp_ortu: "",
+  });
+
+  // Sinkronin form pas data student berubah (pertama kali load, atau
+  // abis refetch sukses) — biar form gak nampilin data basi.
+  useEffect(() => {
+    setForm({
+      alamat: student?.alamat || "",
+      no_hp: student?.no_hp || "",
+      nama_ortu: student?.nama_ortu || "",
+      no_hp_ortu: student?.no_hp_ortu || "",
+    });
+  }, [student]);
+
   const rows = [
     { label: "Nama Lengkap", value: student?.full_name || "-" },
     { label: "Username", value: `@${student?.username || "-"}` },
@@ -33,18 +57,159 @@ export function ProfileInfo({ student }) {
       label: "Kelas",
       value: student?.classes?.grade || student?.homeroom_class_id || "-",
     },
+    { label: "Alamat", value: student?.alamat || "-" },
+    { label: "No. HP Siswa (Kalau Ada)", value: student?.no_hp || "-" },
+    { label: "Nama Orang Tua/Wali", value: student?.nama_ortu || "-" },
+    { label: "No. HP Orang Tua/Wali", value: student?.no_hp_ortu || "-" },
   ];
 
-  return (
-    <div className="divide-y divide-gray-50">
-      {rows.map((r) => (
-        <div key={r.label} className="flex items-center justify-between py-2.5">
-          <span className="text-xs text-gray-400">{r.label}</span>
-          <span className="text-sm font-semibold text-gray-700 text-right">
-            {r.value}
-          </span>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!student?.id) {
+      setFormError("Sesi tidak ketemu, silakan login ulang.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Upsert: 1 baris per siswa di student_profile_details
+      // (student_id = primary key), jadi otomatis update kalau udah
+      // pernah isi, atau insert kalau baru pertama kali.
+      const { error: upsertErr } = await supabase
+        .from("student_profile_details")
+        .upsert(
+          {
+            student_id: student.id,
+            alamat: form.alamat || null,
+            no_hp: form.no_hp || null,
+            nama_ortu: form.nama_ortu || null,
+            no_hp_ortu: form.no_hp_ortu || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "student_id" },
+        );
+
+      if (upsertErr) throw upsertErr;
+
+      setIsEditing(false);
+      if (onUpdated) await onUpdated();
+    } catch (err) {
+      console.error("[ProfileInfo] Gagal simpan data profil tambahan:", err);
+      setFormError("Gagal menyimpan data. Coba lagi.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {formError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+            {formError}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-600 mb-1">
+            Alamat
+          </label>
+          <textarea
+            rows={2}
+            value={form.alamat}
+            onChange={(e) => setForm((f) => ({ ...f, alamat: e.target.value }))}
+            placeholder="Alamat lengkap"
+            className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+          />
         </div>
-      ))}
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-600 mb-1">
+            No. HP Siswa (Kalau Ada)
+          </label>
+          <input
+            type="tel"
+            value={form.no_hp}
+            onChange={(e) => setForm((f) => ({ ...f, no_hp: e.target.value }))}
+            placeholder="08xxxxxxxxxx"
+            className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-600 mb-1">
+            Nama Orang Tua/Wali
+          </label>
+          <input
+            type="text"
+            value={form.nama_ortu}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, nama_ortu: e.target.value }))
+            }
+            placeholder="Nama ayah/ibu/wali"
+            className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-600 mb-1">
+            No. HP Orang Tua/Wali
+          </label>
+          <input
+            type="tel"
+            value={form.no_hp_ortu}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, no_hp_ortu: e.target.value }))
+            }
+            placeholder="08xxxxxxxxxx"
+            className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+          />
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            disabled={submitting}
+            className="flex-1 text-sm font-semibold text-gray-600 bg-gray-100 py-2.5 rounded-lg disabled:opacity-60">
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg disabled:opacity-60">
+            {submitting && <Loader2 size={16} className="animate-spin" />}
+            {submitting ? "Menyimpan..." : "Simpan"}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div>
+      <div className="divide-y divide-gray-100">
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="flex items-start justify-between py-3 gap-3">
+            <span className="text-sm font-medium text-gray-500 shrink-0">
+              {r.label}
+            </span>
+            <span className="text-sm font-bold text-gray-900 text-right break-words">
+              {r.value}
+            </span>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => setIsEditing(true)}
+        className="w-full mt-3 text-sm font-semibold text-blue-600 bg-blue-50 py-2.5 rounded-lg">
+        Lengkapi / Edit Data
+      </button>
     </div>
   );
 }
