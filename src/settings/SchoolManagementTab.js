@@ -98,7 +98,7 @@ const SchoolManagementTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
@@ -132,7 +132,7 @@ const SchoolManagementTab = () => {
 
       {/* Header Section */}
       <div className="flex items-center gap-3 pb-4 border-b">
-        <Building2 className="w-6 h-6 text-indigo-600" />
+        <Building2 className="w-6 h-6 text-blue-600" />
         <div>
           <h3 className="text-lg font-semibold text-slate-800">Data Sekolah</h3>
           <p className="text-sm text-slate-600">
@@ -160,7 +160,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, school_name: e.target.value })
               }
               placeholder="SMP Negeri 1 Bandung"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -176,7 +176,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, npsn: e.target.value })
               }
               placeholder="20219345"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -191,7 +191,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, phone: e.target.value })
               }
               placeholder="022-1234567"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -206,7 +206,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, email: e.target.value })
               }
               placeholder="smpn1bandung@gmail.com"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -231,7 +231,7 @@ const SchoolManagementTab = () => {
               }
               placeholder="Jl. Pendidikan No. 123"
               rows="3"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -246,7 +246,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, city: e.target.value })
               }
               placeholder="Bandung"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -261,7 +261,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, province: e.target.value })
               }
               placeholder="Jawa Barat"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -276,7 +276,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, postal_code: e.target.value })
               }
               placeholder="40123"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -301,7 +301,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, principal_name: e.target.value })
               }
               placeholder="Drs. Ahmad Subarjo, M.Pd"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -316,7 +316,7 @@ const SchoolManagementTab = () => {
                 setSchoolData({ ...schoolData, principal_nip: e.target.value })
               }
               placeholder="196501011990031001"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -327,7 +327,7 @@ const SchoolManagementTab = () => {
         <button
           onClick={saveSchoolData}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
           {saving ? (
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />

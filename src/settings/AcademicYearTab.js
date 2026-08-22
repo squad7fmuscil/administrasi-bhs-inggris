@@ -31,14 +31,14 @@ const AcademicYearTab = () => {
         .from("school_settings")
         .select("setting_value")
         .eq("setting_key", "active_academic_year")
-        .single();
+        .maybeSingle();
 
       // Ambil semester aktif
       const { data: semesterData } = await supabase
         .from("school_settings")
         .select("setting_value")
         .eq("setting_key", "active_semester")
-        .single();
+        .maybeSingle();
 
       if (yearData) setCurrentYear(yearData.setting_value);
       if (semesterData) setCurrentSemester(semesterData.setting_value);
@@ -87,7 +87,7 @@ const AcademicYearTab = () => {
           setting_value: currentYear,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "setting_key" }
+        { onConflict: "setting_key" },
       );
 
       // Upsert semester
@@ -97,7 +97,7 @@ const AcademicYearTab = () => {
           setting_value: currentSemester,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "setting_key" }
+        { onConflict: "setting_key" },
       );
 
       showMessage("success", "Pengaturan berhasil disimpan!");
@@ -120,7 +120,7 @@ const AcademicYearTab = () => {
           setting_value: year,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "setting_key" }
+        { onConflict: "setting_key" },
       );
 
       showMessage("success", `Beralih ke tahun ajaran ${year}`);
@@ -149,7 +149,7 @@ const AcademicYearTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
@@ -183,7 +183,7 @@ const AcademicYearTab = () => {
 
       {/* Header Section */}
       <div className="flex items-center gap-3 pb-4 border-b">
-        <Calendar className="w-6 h-6 text-indigo-600" />
+        <Calendar className="w-6 h-6 text-blue-600" />
         <div>
           <h3 className="text-lg font-semibold text-slate-800">
             Tahun Ajaran & Semester
@@ -204,7 +204,7 @@ const AcademicYearTab = () => {
           <select
             value={currentYear}
             onChange={(e) => setCurrentYear(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="">Pilih Tahun Ajaran</option>
             {generateYearOptions().map((year) => (
               <option key={year} value={year}>
@@ -222,7 +222,7 @@ const AcademicYearTab = () => {
           <select
             value={currentSemester}
             onChange={(e) => setCurrentSemester(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="Ganjil">Ganjil</option>
             <option value="Genap">Genap</option>
           </select>
@@ -234,7 +234,7 @@ const AcademicYearTab = () => {
         <button
           onClick={saveSettings}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
           {saving ? (
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />
@@ -268,8 +268,8 @@ const AcademicYearTab = () => {
                   px-4 py-3 rounded-lg border-2 font-medium transition-all
                   ${
                     year === currentYear
-                      ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                      : "border-slate-200 text-slate-700 hover:border-indigo-400 hover:bg-slate-50"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-slate-50"
                   }
                 `}>
                 {year}

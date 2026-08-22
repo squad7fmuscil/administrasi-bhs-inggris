@@ -89,7 +89,7 @@ const SchoolSettingsTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
@@ -123,7 +123,7 @@ const SchoolSettingsTab = () => {
 
       {/* Header */}
       <div className="flex items-center gap-3 pb-4 border-b">
-        <Sliders className="w-6 h-6 text-indigo-600" />
+        <Sliders className="w-6 h-6 text-blue-600" />
         <div>
           <h3 className="text-lg font-semibold text-slate-800">
             Pengaturan Sekolah
@@ -157,7 +157,7 @@ const SchoolSettingsTab = () => {
               }
               min="20"
               max="50"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-slate-500">Rekomendasi: 32-36 siswa</p>
           </div>
@@ -174,7 +174,7 @@ const SchoolSettingsTab = () => {
                   default_absent_status: e.target.value,
                 })
               }
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option value="Alpha">Alpha (Tanpa Keterangan)</option>
               <option value="Sakit">Sakit</option>
               <option value="Izin">Izin</option>
@@ -204,7 +204,7 @@ const SchoolSettingsTab = () => {
                   attendance_auto_reset_time: e.target.value,
                 })
               }
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-slate-500">
               Waktu sistem mereset status absensi harian
@@ -226,7 +226,7 @@ const SchoolSettingsTab = () => {
               }
               min="5"
               max="60"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-slate-500">
               Waktu toleransi sebelum dianggap terlambat
@@ -264,7 +264,7 @@ const SchoolSettingsTab = () => {
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
 
@@ -291,7 +291,7 @@ const SchoolSettingsTab = () => {
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
         </div>
@@ -324,7 +324,7 @@ const SchoolSettingsTab = () => {
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
 
@@ -339,7 +339,7 @@ const SchoolSettingsTab = () => {
                 onChange={(e) =>
                   setSettings({ ...settings, backup_time: e.target.value })
                 }
-                className="w-full md:w-64 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full md:w-64 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}
@@ -351,7 +351,7 @@ const SchoolSettingsTab = () => {
         <button
           onClick={saveSettings}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
           {saving ? (
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />

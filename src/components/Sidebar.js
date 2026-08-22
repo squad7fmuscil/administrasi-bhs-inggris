@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -39,13 +39,40 @@ export default function Sidebar({
   onLogout,
 }) {
   const [openGroups, setOpenGroups] = useState({
-    akademik: true,
-    administrasi: true,
+    akademik: false,
+    administrasi: false,
   });
 
   const toggleGroup = (key) => {
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // ============ SWIPE TO CLOSE (mobile) ============
+  const touchStartX = useRef(null);
+  const touchCurrentX = useRef(null);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchCurrentX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchCurrentX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchCurrentX.current === null) return;
+    const deltaX = touchCurrentX.current - touchStartX.current;
+
+    // Swipe ke kiri minimal 60px -> tutup sidebar (mobile)
+    if (deltaX < -60 && isMobileMenuOpen && window.innerWidth < 1024) {
+      toggleMobileMenu();
+    }
+
+    touchStartX.current = null;
+    touchCurrentX.current = null;
+  };
+  // ===================================================
 
   // Dashboard - tidak masuk grup manapun, selalu tampil di atas
   const dashboardItem = {
@@ -252,6 +279,9 @@ export default function Sidebar({
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={toggleMobileMenu}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         />
       )}
 
@@ -266,7 +296,10 @@ export default function Sidebar({
           }
           ${isSidebarOpen ? "lg:w-64" : "lg:w-20"}
           w-64 shadow-2xl shadow-blue-900/20
-        `}>
+        `}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}>
         {/* Animated gradient background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600/10 via-transparent to-purple-600/10 animate-pulse"></div>
@@ -384,7 +417,7 @@ export default function Sidebar({
                         overflow-hidden transition-all duration-300 ease-in-out
                         ${
                           isOpen
-                            ? "max-h-[400px] opacity-100 mt-1"
+                            ? "max-h-[600px] opacity-100 mt-1"
                             : "max-h-0 opacity-0"
                         }
                       `}>
