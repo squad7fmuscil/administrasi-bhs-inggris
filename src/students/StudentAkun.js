@@ -5,7 +5,7 @@
 //      ada tombol "Kembali" buat balik ke list.
 // Isi tiap menu baru di-mount (jadi baru fetch data-nya kalau ada) pas
 // menunya diklik — bukan langsung semua ke-fetch pas halaman ini dibuka.
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import useStudentProfile from "./useStudentProfile";
 import {
   ProfileInfo,
@@ -81,14 +81,22 @@ const MENUS = [
   },
 ];
 
-export default function StudentAkun() {
+export default function StudentAkun({ initialMenu } = {}) {
   const {
     student,
     loading: profileLoading,
     error: profileError,
     refetch: refetchProfile,
   } = useStudentProfile();
-  const [activeMenu, setActiveMenu] = useState(null);
+  const [activeMenu, setActiveMenu] = useState(initialMenu || null);
+
+  // Kalau StudentAkun udah ke-mount duluan (misal user baru aja di halaman
+  // Akun) terus onPageChange("student-lainnya", "pengumuman") dipanggil
+  // lagi, initialMenu prop-nya berubah tapi useState di atas gak jalan
+  // ulang. Effect ini yang jaga biar tetep ke-sync & auto-buka menunya.
+  useEffect(() => {
+    if (initialMenu) setActiveMenu(initialMenu);
+  }, [initialMenu]);
 
   if (profileLoading) {
     return (

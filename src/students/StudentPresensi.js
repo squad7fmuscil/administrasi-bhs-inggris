@@ -1,13 +1,20 @@
 // students/StudentPresensi.js
 // Riwayat presensi siswa (read-only, punya sendiri doang — bukan buat absen).
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import useStudentProfile from "./useStudentProfile";
 import { formatDateShort, getStatusMeta } from "./StudentHelpers";
 // Reuse langsung generator PDF yang dipake sisi guru, biar hasil export
 // "persis" sama formatnya se-aplikasi (bukan duplikat logic jsPDF di sini).
 import { exportStudentAttendancePDF } from "../page/attendance/AttendancePDF";
-import { Download, AlertTriangle, FileText } from "lucide-react";
+import {
+  Download,
+  AlertTriangle,
+  FileText,
+  Sparkles,
+  ThumbsUp,
+  ChevronDown,
+} from "lucide-react";
 
 const MONTH_NAMES = [
   "Januari",
@@ -26,6 +33,47 @@ const MONTH_NAMES = [
 
 // Urutan bulan tahun ajaran: mulai Juli, berakhir Juni tahun berikutnya.
 const ACADEMIC_MONTH_ORDER = [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6];
+
+// Tingkatan notif motivasi kehadiran — dicek dari atas ke bawah (min
+// tertinggi duluan), tier pertama yang lolos (rate >= min) yang dipake.
+// 3 tier aja biar gampang di-scan sekilas (gak sekedar "aman vs bahaya",
+// rentang tengah tetep diapresiasi + didorong naik lagi).
+const ATTENDANCE_TIERS = [
+  {
+    min: 90,
+    icon: Sparkles,
+    className: "bg-green-50 border-green-200 text-green-700",
+    message: (r) => (
+      <>
+        Kehadiran kamu <strong>{r}%</strong> — bagus sekali! Terus jaga
+        konsistensinya 🌟
+      </>
+    ),
+  },
+  {
+    min: 70,
+    icon: ThumbsUp,
+    className: "bg-blue-50 border-blue-200 text-blue-700",
+    message: (r) => (
+      <>
+        Kehadiran kamu <strong>{r}%</strong> — udah cukup baik! Ayo ditingkatkan
+        lagi biar makin mantap 👍
+      </>
+    ),
+  },
+  {
+    min: 0,
+    icon: AlertTriangle,
+    className: "bg-red-50 border-red-200 text-red-700",
+    message: (r) => (
+      <>
+        Kehadiran kamu saat ini <strong>{r}%</strong>, masih di bawah batas
+        minimal 70%. Kalau terus di bawah 70%, ini bisa berdampak ke masalah
+        akademik ke depannya. Yuk lebih rajin masuk kelas mulai sekarang ya!
+      </>
+    ),
+  },
+];
 
 // Tahun ajaran berjalan dihitung otomatis dari tanggal hari ini.
 // Juli-Desember -> startYear = tahun berjalan.
@@ -67,6 +115,10 @@ export default function StudentPresensi() {
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [exportMode, setExportMode] = useState("bulanan"); // "bulanan" | "semester"
 
+  // Riwayat Presensi disembunyiin default, baru muncul kalau di-klik
+  // (jangan langsung keluar semua pas halaman ini dibuka).
+  const [showHistory, setShowHistory] = useState(false);
+
   const academicYear = useMemo(() => getCurrentAcademicYear(), []);
   const monthOptions = useMemo(
     () => getAcademicMonthOptions(academicYear.startYear),
@@ -90,6 +142,73 @@ export default function StudentPresensi() {
 
   const [selectedMonthIdx, setSelectedMonthIdx] = useState(defaultMonthIdx);
   const [selectedSemester, setSelectedSemester] = useState(defaultSemester);
+
+  // Ringkasan cepat per status
+  const summary = useMemo(
+    () =>
+      history.reduce(
+        (acc, h) => {
+          const s = (h.status || "").toLowerCase();
+          if (acc[s] !== undefined) acc[s] += 1;
+          return acc;
+        },
+        { hadir: 0, sakit: 0, izin: 0, alpa: 0 },
+      ),
+    [history],
+  );
+
+  // Persentase kehadiran: cuma status "hadir" yang dihitung hadir,
+  // selain itu (sakit/izin/alpa) dianggap tidak hadir.
+  const attendanceRate = useMemo(() => {
+    const total = summary.hadir + summary.sakit + summary.izin + summary.alpa;
+    return total > 0 ? (summary.hadir / total) * 100 : null;
+  }, [summary]);
+
+  const attendanceTier = useMemo(
+    () =>
+      attendanceRate !== null
+        ? ATTENDANCE_TIERS.find((t) => attendanceRate >= t.min)
+        : null,
+    [attendanceRate],
+  );
+
+  // Popup warning: muncul otomatis maksimal SEKALI PER HARI (bukan tiap
+  // kali halaman ini dibuka/refresh) kalau kehadiran di bawah 70% — biar
+  // gak berasa nge-gas kalau siswa buka halaman ini berkali-kali sehari.
+  // Ditandain lewat localStorage, key-nya per siswa + per tanggal lokal.
+  const [showLowAttendanceAlert, setShowLowAttendanceAlert] = useState(false);
+  const alertShownRef = useRef(false);
+  useEffect(() => {
+    if (
+      attendanceRate === null ||
+      attendanceRate >= 70 ||
+      alertShownRef.current
+    ) {
+      return;
+    }
+    alertShownRef.current = true;
+
+    // Pake tanggal lokal (WIB), konsisten sama pola todayStr di
+    // StudentDashboard.js — biar "hari ini" gak ke-geser gara-gara UTC.
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const storageKey = `low_attendance_alert_${student?.id || "guest"}_${todayStr}`;
+
+    try {
+      if (!localStorage.getItem(storageKey)) {
+        setShowLowAttendanceAlert(true);
+        localStorage.setItem(storageKey, "1");
+      }
+    } catch (err) {
+      // Kalau localStorage gak bisa diakses (mode private/incognito
+      // strict dsb), fallback aman: tetep tampilin popup-nya sekali
+      // daripada diem-diem gagal total.
+      console.warn("[StudentPresensi] localStorage gak bisa diakses:", err);
+      setShowLowAttendanceAlert(true);
+    }
+  }, [attendanceRate, student]);
 
   useEffect(() => {
     if (!student) return;
@@ -139,22 +258,6 @@ export default function StudentPresensi() {
       </div>
     );
   }
-
-  // Ringkasan cepat per status
-  const summary = history.reduce(
-    (acc, h) => {
-      const s = (h.status || "").toLowerCase();
-      if (acc[s] !== undefined) acc[s] += 1;
-      return acc;
-    },
-    { hadir: 0, sakit: 0, izin: 0, alpa: 0 },
-  );
-
-  // Persentase kehadiran: cuma status "hadir" yang dihitung hadir,
-  // selain itu (sakit/izin/alpa) dianggap tidak hadir.
-  const total = summary.hadir + summary.sakit + summary.izin + summary.alpa;
-  const attendanceRate = total > 0 ? (summary.hadir / total) * 100 : null;
-  const isLowAttendance = attendanceRate !== null && attendanceRate < 70;
 
   const handleExportPDF = async () => {
     if (!student) return;
@@ -274,13 +377,12 @@ export default function StudentPresensi() {
         </div>
       )}
 
-      {isLowAttendance && (
-        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm">
-          <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" />
-          <span>
-            Kehadiran kamu baru <strong>{attendanceRate.toFixed(1)}%</strong>,
-            masih di bawah 70%. Yuk lebih rajin masuk kelas ya, biar nggak kena
-            masalah akademik ke depannya!
+      {attendanceTier && (
+        <div
+          className={`flex items-start gap-2 border px-4 py-3 rounded-xl text-sm ${attendanceTier.className}`}>
+          <attendanceTier.icon size={18} className="flex-shrink-0 mt-0.5" />
+          <span className="text-justify flex-1">
+            {attendanceTier.message(attendanceRate.toFixed(1))}
           </span>
         </div>
       )}
@@ -301,8 +403,8 @@ export default function StudentPresensi() {
         <div className="grid grid-cols-2 gap-2">
           <div
             className={`rounded-xl border p-3 text-center ${
-              isLowAttendance
-                ? "bg-red-50 border-red-200 text-red-700"
+              attendanceTier
+                ? attendanceTier.className
                 : "bg-blue-50 border-blue-200 text-blue-700"
             }`}>
             <p className="text-lg font-bold leading-none">
@@ -314,7 +416,7 @@ export default function StudentPresensi() {
           <button
             onClick={() => setShowExportPanel((v) => !v)}
             disabled={history.length === 0}
-            className="rounded-xl border p-3 text-center bg-white border-gray-200 text-gray-700 flex flex-col items-center justify-center gap-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+            className="rounded-xl border p-3 text-center bg-indigo-50 border-indigo-200 text-indigo-700 flex flex-col items-center justify-center gap-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
             <Download size={16} />
             <p className="text-[11px] font-semibold mt-0.5">Export PDF</p>
           </button>
@@ -400,36 +502,71 @@ export default function StudentPresensi() {
 
       {/* Riwayat */}
       <div>
-        <h2 className="text-base font-bold text-gray-800 mb-2">
+        <button
+          onClick={() => setShowHistory((v) => !v)}
+          className="w-full flex items-center justify-between text-base font-bold text-gray-800 mb-2">
           Riwayat Presensi
-        </h2>
-        {history.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400 text-sm shadow-sm">
-            Belum Ada Data Presensi.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {history.map((h) => {
-              const meta = getStatusMeta(h.status);
-              const Icon = meta.icon;
-              return (
-                <div
-                  key={h.id}
-                  className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center justify-between">
-                  <span className="text-sm text-gray-700">
-                    {formatDateShort(h.date)}
-                  </span>
-                  <span
-                    className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${meta.color}`}>
-                    <Icon size={13} />
-                    {meta.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+          <ChevronDown
+            size={18}
+            className={`text-gray-400 transition-transform ${
+              showHistory ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {showHistory &&
+          (history.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400 text-sm shadow-sm">
+              Belum Ada Data Presensi.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {history.map((h) => {
+                const meta = getStatusMeta(h.status);
+                const Icon = meta.icon;
+                return (
+                  <div
+                    key={h.id}
+                    className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center justify-between">
+                    <span className="text-sm text-gray-700">
+                      {formatDateShort(h.date)}
+                    </span>
+                    <span
+                      className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${meta.color}`}>
+                      <Icon size={13} />
+                      {meta.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
       </div>
+
+      {/* ====== POPUP WARNING KEHADIRAN RENDAH ====== */}
+      {showLowAttendanceAlert && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={26} className="text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Yuk, Tingkatkan Kehadiranmu!
+            </h3>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              Kehadiran kamu masih{" "}
+              <strong className="text-red-600">
+                {attendanceRate.toFixed(1)}%
+              </strong>{" "}
+              — di bawah batas minimal 70%. Yuk lebih rajin masuk kelas ya!
+            </p>
+            <button
+              onClick={() => setShowLowAttendanceAlert(false)}
+              className="w-full mt-5 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm transition-colors">
+              Mengerti, Aku Akan Lebih Rajin
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

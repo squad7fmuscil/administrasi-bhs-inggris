@@ -14,33 +14,33 @@ export default function StudentBottomNav({ currentPage, onPageChange }) {
       id: "student-dashboard",
       label: "Home",
       icon: Home,
-      activeText: "text-blue-600",
+      activeText: "text-blue-800",
       activeBg: "bg-blue-50",
-      inactiveText: "text-blue-300",
+      inactiveText: "text-blue-500",
     },
     {
       id: "student-jadwal",
       label: "Jadwal",
       icon: Calendar,
-      activeText: "text-purple-600",
+      activeText: "text-purple-800",
       activeBg: "bg-purple-50",
-      inactiveText: "text-purple-300",
+      inactiveText: "text-purple-500",
     },
     {
       id: "student-presensi",
       label: "Presensi",
       icon: ClipboardCheck,
-      activeText: "text-green-600",
+      activeText: "text-green-800",
       activeBg: "bg-green-50",
-      inactiveText: "text-green-300",
+      inactiveText: "text-green-500",
     },
     {
       id: "student-lainnya",
       label: "Akun",
       icon: User,
-      activeText: "text-orange-600",
+      activeText: "text-orange-800",
       activeBg: "bg-orange-50",
-      inactiveText: "text-orange-300",
+      inactiveText: "text-orange-500",
     },
   ];
 
@@ -63,11 +63,13 @@ export default function StudentBottomNav({ currentPage, onPageChange }) {
               }`}>
               <Icon
                 size={23}
-                strokeWidth={isActive ? 2.5 : 2.2}
+                strokeWidth={isActive ? 2.6 : 2.3}
                 className={textColor}
               />
               <span
-                className={`text-[11px] font-semibold truncate max-w-full ${textColor}`}>
+                className={`text-[11px] truncate max-w-full ${
+                  isActive ? "font-bold" : "font-semibold"
+                } ${textColor}`}>
                 {item.label}
               </span>
             </button>

@@ -4,7 +4,7 @@
 // Jadwal, Presensi, Lainnya) biar header + bottom nav konsisten di semua
 // halaman — bukan cuma nempel di StudentDashboard.js kayak sebelumnya.
 // ========================================================================
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, LogOut } from "lucide-react";
 import StudentBottomNav from "./StudentBottomNav";
 import StudentSidebar from "./StudentSidebar";
@@ -13,8 +13,43 @@ const PAGE_TITLES = {
   "student-dashboard": "Beranda",
   "student-jadwal": "Jadwal Pelajaran",
   "student-presensi": "Presensi Saya",
-  "student-lainnya": "Lainnya",
+  "student-lainnya": "Akun Saya",
 };
+
+// Jam + tanggal live di header. Update tiap detik biar jamnya jalan,
+// tapi cuma re-render komponen kecil ini (bukan seluruh layout).
+// Tampil di semua ukuran layar (HP & desktop).
+function LiveClock() {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const time = now.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const dateLine = now.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="flex flex-col items-end leading-tight shrink-0">
+      <span className="text-base sm:text-lg font-bold text-blue-900 tabular-nums">
+        {time}
+      </span>
+      <span className="text-[10px] sm:text-xs font-medium text-blue-500 whitespace-nowrap">
+        {dateLine}
+      </span>
+    </div>
+  );
+}
 
 export default function StudentLayout({
   children,
@@ -46,28 +81,29 @@ export default function StudentLayout({
           ketiban sidebar (lg:w-64 -> lg:pl-64) ====== */}
       <div className="lg:pl-64">
         {/* ====== HEADER ====== */}
-        <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 shadow-lg">
-          <div className="px-4 py-3 flex items-center justify-between">
+        <header className="bg-gradient-to-r from-sky-100 via-blue-100 to-indigo-100 text-blue-900 sticky top-0 z-30 shadow-sm border-b border-blue-100/80">
+          <div className="px-4 py-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center shrink-0 lg:hidden">
-                <User size={18} />
+              <div className="w-9 h-9 bg-white/70 rounded-full flex items-center justify-center shrink-0 lg:hidden shadow-sm">
+                <User size={18} className="text-blue-500" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-sm font-bold leading-tight truncate">
+                <h1 className="text-sm font-bold leading-tight truncate text-blue-900">
                   {pageTitle}
                 </h1>
-                <p className="text-blue-100 text-xs truncate">
-                  {currentUser?.full_name || "Siswa"} · Kelas{" "}
-                  {currentUser?.homeroom_class_id || "-"}
-                </p>
               </div>
             </div>
-            <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-xs font-medium shrink-0 lg:hidden">
-              <LogOut size={14} />
-              Keluar
-            </button>
+            {currentPage === "student-dashboard" && (
+              <div className="flex items-center gap-2 shrink-0">
+                <LiveClock />
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-full transition shadow-sm text-xs font-semibold lg:hidden">
+                  <LogOut size={14} />
+                  Keluar
+                </button>
+              </div>
+            )}
           </div>
         </header>
 

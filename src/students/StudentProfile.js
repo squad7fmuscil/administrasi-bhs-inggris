@@ -57,7 +57,7 @@ export function ProfileInfo({ student, onUpdated }) {
       label: "Kelas",
       value: student?.classes?.grade || student?.homeroom_class_id || "-",
     },
-    { label: "Alamat", value: student?.alamat || "-" },
+    { label: "Alamat Lengkap", value: student?.alamat || "-" },
     { label: "No. HP Siswa (Kalau Ada)", value: student?.no_hp || "-" },
     { label: "Nama Orang Tua/Wali", value: student?.nama_ortu || "-" },
     { label: "No. HP Orang Tua/Wali", value: student?.no_hp_ortu || "-" },
@@ -114,13 +114,13 @@ export function ProfileInfo({ student, onUpdated }) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-600 mb-1">
-            Alamat
+            Alamat Lengkap
           </label>
           <textarea
             rows={2}
             value={form.alamat}
             onChange={(e) => setForm((f) => ({ ...f, alamat: e.target.value }))}
-            placeholder="Alamat lengkap"
+            placeholder="Contoh: Kp. Cikadu RT 08 RW 07 Desa Bongas Kec. Cililin Kab. Bandung Barat"
             className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
           />
         </div>

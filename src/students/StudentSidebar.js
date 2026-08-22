@@ -27,7 +27,7 @@ export default function StudentSidebar({
     { id: "student-dashboard", label: "Beranda", icon: Home },
     { id: "student-jadwal", label: "Jadwal", icon: Calendar },
     { id: "student-presensi", label: "Presensi", icon: ClipboardCheck },
-    { id: "student-lainnya", label: "Lainnya", icon: Grid3x3 },
+    { id: "student-lainnya", label: "Akun", icon: Grid3x3 },
   ];
 
   return (

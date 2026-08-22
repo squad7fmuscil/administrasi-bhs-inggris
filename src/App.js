@@ -54,6 +54,10 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
+  // Dipake pas navigasi ke halaman Akun (student-lainnya) tapi mau langsung
+  // auto-buka salah satu menunya juga (misal dari "Lihat Semua" Pengumuman
+  // di StudentDashboard) — dioper ke <StudentAkun initialMenu={...} />.
+  const [akunInitialMenu, setAkunInitialMenu] = useState(null);
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -143,6 +147,14 @@ export default function App() {
     setCurrentPage(pageId);
   };
 
+  // Sama kayak handlePageChange, tapi khusus portal siswa & bisa nerima
+  // argumen kedua (menuParam) buat kasih tau StudentAkun menu mana yang
+  // harus auto-kebuka begitu landing di "student-lainnya".
+  const handleStudentPageChange = (pageId, menuParam) => {
+    setCurrentPage(pageId);
+    setAkunInitialMenu(menuParam || null);
+  };
+
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
     setTimeout(() => {
@@ -183,17 +195,17 @@ export default function App() {
           case "student-presensi":
             return <StudentPresensi />;
           case "student-lainnya":
-            return <StudentAkun />;
+            return <StudentAkun initialMenu={akunInitialMenu} />;
           case "student-dashboard":
           default:
-            return <StudentDashboard onPageChange={setCurrentPage} />;
+            return <StudentDashboard onPageChange={handleStudentPageChange} />;
         }
       };
 
       return (
         <StudentLayout
           currentPage={activeStudentPage}
-          onPageChange={setCurrentPage}
+          onPageChange={handleStudentPageChange}
           currentUser={currentUser}
           onLogout={handleLogout}>
           {renderStudentPage()}

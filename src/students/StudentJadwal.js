@@ -23,6 +23,22 @@ const FRIDAY_TIMES = {
 // Senin - Jumat (KBM cuma Senin-Jumat, Sabtu & Minggu libur)
 const SCHOOL_DAYS = DAY_NAMES.filter((d) => d !== "Minggu" && d !== "Sabtu");
 
+// Nama kelas dihardcode karena app ini emang khusus buat kelas 7B.
+// Kalau nanti dipake lintas kelas, ganti jadi ambil dari data kelas
+// (mis. student.homeroom_class_name) di tabel classes.
+const CLASS_NAME = "7B";
+
+// Fallback tahun ajaran kalau kolom students.academic_year kosong/null.
+// Tahun ajaran di Indonesia mulai bulan Juli, jadi:
+// - Jul-Des -> "tahunSekarang/tahunSekarang+1"
+// - Jan-Jun -> "tahunSekarang-1/tahunSekarang"
+function getDefaultAcademicYear() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  return month >= 7 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
+}
+
 export default function StudentJadwal() {
   const {
     student,
@@ -87,8 +103,20 @@ export default function StudentJadwal() {
     .filter((item) => item.day === activeDay)
     .sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""));
 
+  const academicYear = student?.academic_year || getDefaultAcademicYear();
+
   return (
     <>
+      {/* Header jadwal */}
+      <div className="text-center mb-1">
+        <h2 className="text-lg font-bold text-gray-800">
+          JADWAL PELAJARAN KELAS {CLASS_NAME}
+        </h2>
+        <p className="text-xs font-semibold text-gray-400 tracking-wide">
+          TAHUN AJARAN {academicYear}
+        </p>
+      </div>
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
           ⚠️ {error}

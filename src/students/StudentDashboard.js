@@ -4,7 +4,6 @@ import useStudentProfile from "./useStudentProfile";
 import {
   DAY_NAMES,
   getDayName,
-  formatDate,
   getStatusMeta,
   isOngoing,
 } from "./StudentHelpers";
@@ -20,6 +19,33 @@ import { Clock, CheckCircle, Bell, Users as UsersIcon } from "lucide-react";
 //   file ini) — komponen ini fokus ke konten aja.
 // ========================================================================
 
+// Ambang batas buat badge "Kehadiran Bagus" — 90% itu standar umum yang
+// dipake sekolah buat kategori kehadiran baik (biasanya juga jadi syarat
+// minimal terkait kenaikan kelas). Gampang diubah di sini kalau kebijakan
+// sekolah beda.
+const ATTENDANCE_GOOD_THRESHOLD = 90;
+
+const getGreetingWord = () => {
+  const h = new Date().getHours();
+  if (h < 10) return "Selamat Pagi";
+  if (h < 15) return "Selamat Siang";
+  if (h < 18) return "Selamat Sore";
+  return "Selamat Malam";
+};
+
+// Nama lengkap kalau cuma 1-2 kata (misal "Ahmad Fauzan"). Kalau lebih
+// dari 2 kata (misal "Ahmad Fauzan Ramadhan"), kata pertama tetep utuh,
+// sisanya disingkat jadi huruf depan aja (jadi "Ahmad F. R.") biar gak
+// kepanjangan di layout greeting yang sempit.
+const getDisplayName = (fullName) => {
+  if (!fullName) return "Siswa";
+  const words = fullName.trim().split(/\s+/);
+  if (words.length <= 2) return fullName.trim();
+  const [first, ...rest] = words;
+  const initials = rest.map((w) => `${w[0].toUpperCase()}.`).join(" ");
+  return `${first} ${initials}`;
+};
+
 export default function StudentDashboard({ onPageChange }) {
   const {
     student,
@@ -28,6 +54,7 @@ export default function StudentDashboard({ onPageChange }) {
   } = useStudentProfile();
 
   const [todayStatus, setTodayStatus] = useState(null);
+  const [attendanceRate, setAttendanceRate] = useState(null); // persen hadir bulan ini, null kalau belum ada data
   const [todaySchedule, setTodaySchedule] = useState([]);
   const [piketToday, setPiketToday] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
@@ -53,11 +80,19 @@ export default function StudentDashboard({ onPageChange }) {
         ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
         const todayName = getDayName(today);
 
+        // Awal bulan berjalan, buat scope hitung persentase kehadiran
+        // ("bulan ini" biar relevan sama kondisi terkini, bukan history
+        // dari awal tahun ajaran yang query-nya lebih berat).
+        const firstOfMonthStr = `${today.getFullYear()}-${String(
+          today.getMonth() + 1,
+        ).padStart(2, "0")}-01`;
+
         const [
           { data: myAtt, error: myAttErr },
           { data: schedData, error: schedErr },
           { data: piketData, error: piketErr },
           { data: annData, error: annErr },
+          { data: monthAttData, error: monthAttErr },
         ] = await Promise.all([
           // Presensi hari ini — status sendiri (khusus row "walikelas" /
           // harian, karena ada juga row "mapel" dari absensi Bahasa Inggris
@@ -97,6 +132,17 @@ export default function StudentDashboard({ onPageChange }) {
             .eq("target_class", student.homeroom_class_id)
             .order("created_at", { ascending: false })
             .limit(3),
+
+          // History presensi bulan ini (khusus row "walikelas", sama kayak
+          // query todayStatus) — dipake buat itung persentase kehadiran.
+          // Nilai status "Hadir" (H besar) — samain kayak Attendance.js.
+          supabase
+            .from("attendance")
+            .select("status")
+            .eq("student_id", student.studentRecordId)
+            .eq("type", "walikelas")
+            .gte("date", firstOfMonthStr)
+            .lte("date", todayStr),
         ]);
 
         // Kumpulin semua error query (kalau ada) biar keliatan di UI,
@@ -106,6 +152,7 @@ export default function StudentDashboard({ onPageChange }) {
           schedErr && "jadwal",
           piketErr && "piket",
           annErr && "pengumuman",
+          monthAttErr && "riwayat kehadiran",
         ].filter(Boolean);
 
         if (errors.length > 0) {
@@ -114,6 +161,7 @@ export default function StudentDashboard({ onPageChange }) {
             schedErr,
             piketErr,
             annErr,
+            monthAttErr,
           });
           setDataError(`Gagal memuat data: ${errors.join(", ")}.`);
         }
@@ -122,6 +170,20 @@ export default function StudentDashboard({ onPageChange }) {
         setTodaySchedule(schedData || []);
         setPiketToday(piketData || []);
         setAnnouncements(annData || []);
+
+        // CATATAN: nilai kolom `status` yang berarti "hadir" itu string
+        // "Hadir" (H besar) — samain persis kayak yang dipake di
+        // Attendance.js pas guru input presensi.
+        if (monthAttData && monthAttData.length > 0) {
+          const hadirCount = monthAttData.filter(
+            (r) => r.status === "Hadir",
+          ).length;
+          setAttendanceRate(
+            Math.round((hadirCount / monthAttData.length) * 100),
+          );
+        } else {
+          setAttendanceRate(null);
+        }
       } catch (err) {
         console.error("Error loading student dashboard:", err);
         setDataError("Gagal memuat data. Coba refresh halaman.");
@@ -241,16 +303,41 @@ export default function StudentDashboard({ onPageChange }) {
       )}
 
       {/* ====== GREETING ====== */}
-      <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h2 className="text-xl font-bold text-gray-800">
-          Selamat Datang, {student?.full_name?.split(" ")[0] || "Siswa"} 👋
-        </h2>
-        <p className="text-gray-400 text-xs mt-1">{formatDate()}</p>
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border border-blue-100/70 shadow-sm p-5">
+        {/* Aksen bulat dekoratif, samar, di pojok — cuma vibe, gak ganggu konten */}
+        <div className="pointer-events-none absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/40 blur-2xl"></div>
+        <div className="pointer-events-none absolute -bottom-10 -left-6 w-24 h-24 rounded-full bg-purple-200/30 blur-2xl"></div>
+
+        <div className="relative flex items-center gap-3.5">
+          <div className="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 shadow-md shadow-blue-900/10 flex items-center justify-center">
+            <span className="text-white font-bold text-lg">
+              {(student?.full_name?.[0] || "S").toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-indigo-400 uppercase tracking-wide">
+              {getGreetingWord()}
+            </p>
+            <h2 className="text-lg font-bold text-gray-800 truncate">
+              {getDisplayName(student?.full_name)} 👋
+            </h2>
+          </div>
+        </div>
+
+        {attendanceRate !== null &&
+          attendanceRate >= ATTENDANCE_GOOD_THRESHOLD && (
+            <div className="relative mt-3.5 flex items-center gap-2 bg-emerald-500/90 text-white text-xs font-semibold px-3.5 py-2 rounded-xl w-fit">
+              <span className="text-sm leading-none">🌟</span>
+              <span>
+                Kehadiran Kamu Bulan Ini Bagus Sekali ({attendanceRate}%)
+              </span>
+            </div>
+          )}
       </section>
 
       {/* ====== PRESENSI HARI INI ====== */}
       <section>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex items-center justify-between">
           <p className="text-sm font-semibold text-gray-600">Presensi Saya :</p>
           <div
             className={`flex items-center gap-1.5 text-base font-bold px-3 py-1.5 rounded-xl border ${statusMeta.color}`}>
@@ -270,7 +357,9 @@ export default function StudentDashboard({ onPageChange }) {
                 : "bg-white border-gray-100"
             }`}>
             <div className="flex items-center gap-2 mb-3">
-              <UsersIcon size={18} className="text-orange-500" />
+              <div className="w-7 h-7 shrink-0 rounded-full bg-orange-100 flex items-center justify-center">
+                <UsersIcon size={14} className="text-orange-500" />
+              </div>
               <p className="text-sm font-bold text-gray-800">Piket Hari Ini</p>
             </div>
 
@@ -329,12 +418,14 @@ export default function StudentDashboard({ onPageChange }) {
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
-            <Clock size={18} className="text-blue-500" />
+            <div className="w-7 h-7 shrink-0 rounded-full bg-blue-100 flex items-center justify-center">
+              <Clock size={14} className="text-blue-500" />
+            </div>
             Jadwal Hari Ini
           </h2>
           <button
             onClick={() => onPageChange && onPageChange("student-jadwal")}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+            className="text-xs font-semibold text-blue-600 hover:text-blue-700 active:scale-95 transition-transform">
             Lihat Semua
           </button>
         </div>
@@ -360,7 +451,7 @@ export default function StudentDashboard({ onPageChange }) {
               return (
                 <div
                   key={block.id}
-                  className={`rounded-2xl border p-4 shadow-sm transition ${
+                  className={`rounded-2xl border p-4 shadow-sm transition active:scale-[0.98] ${
                     ongoing
                       ? "bg-blue-50 border-blue-300"
                       : "bg-white border-gray-100"
@@ -404,12 +495,16 @@ export default function StudentDashboard({ onPageChange }) {
         <section>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
-              <Bell size={18} className="text-yellow-500" />
+              <div className="w-7 h-7 shrink-0 rounded-full bg-yellow-100 flex items-center justify-center">
+                <Bell size={14} className="text-yellow-500" />
+              </div>
               Pengumuman
             </h2>
             <button
-              onClick={() => onPageChange && onPageChange("student-lainnya")}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+              onClick={() =>
+                onPageChange && onPageChange("student-lainnya", "pengumuman")
+              }
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 active:scale-95 transition-transform">
               Lihat Semua
             </button>
           </div>
