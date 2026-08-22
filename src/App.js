@@ -49,6 +49,10 @@ import StudentDashboard from "./students/StudentDashboard";
 import StudentJadwal from "./students/StudentJadwal";
 import StudentPresensi from "./students/StudentPresensi";
 import StudentAkun from "./students/StudentAkun";
+// Fitur "Belajar" (e-learning siswa) - satu pintu masuk aja, semua
+// navigasi internal (pilih mapel -> chapter -> detail) di-handle di
+// dalem BelajarMain.js sendiri, App.js gak perlu tau detailnya.
+import BelajarMain from "./students/belajar/BelajarMain";
 // ===========================================
 
 export default function App() {
@@ -183,6 +187,7 @@ export default function App() {
         "student-dashboard",
         "student-jadwal",
         "student-presensi",
+        "student-belajar",
         "student-lainnya",
       ];
       const activeStudentPage = studentPages.includes(currentPage)
@@ -195,6 +200,8 @@ export default function App() {
             return <StudentJadwal />;
           case "student-presensi":
             return <StudentPresensi />;
+          case "student-belajar":
+            return <BelajarMain currentUser={currentUser} />;
           case "student-lainnya":
             return <StudentAkun initialMenu={akunInitialMenu} />;
           case "student-dashboard":

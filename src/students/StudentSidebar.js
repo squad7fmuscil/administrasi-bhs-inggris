@@ -3,7 +3,7 @@
 // Sidebar khusus portal siswa, HANYA tampil di desktop (lg:flex, hidden di
 // HP karena mobile udah pake StudentBottomNav.js). Selalu fixed & expanded
 // (gak ada collapse toggle kayak Sidebar.js admin) karena menu siswa cuma
-// 4 item flat, gak butuh grouping.
+// 5 item flat, gak butuh grouping.
 //
 // Pattern sama kayak StudentBottomNav.js: item nav pake <button onClick
 // onPageChange(...)> (state-based routing), BUKAN <a href="...">.
@@ -12,6 +12,7 @@ import {
   Home,
   Calendar,
   ClipboardCheck,
+  BookOpen,
   Grid3x3,
   LogOut,
   User,
@@ -27,6 +28,7 @@ export default function StudentSidebar({
     { id: "student-dashboard", label: "Beranda", icon: Home },
     { id: "student-jadwal", label: "Jadwal", icon: Calendar },
     { id: "student-presensi", label: "Presensi", icon: ClipboardCheck },
+    { id: "student-belajar", label: "Belajar", icon: BookOpen },
     { id: "student-lainnya", label: "Akun", icon: Grid3x3 },
   ];
 

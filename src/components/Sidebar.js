@@ -108,7 +108,7 @@ export default function Sidebar({
         },
         {
           id: "student-profile-completion",
-          label: "Kelengkapan Data Siswa",
+          label: "Kelengkapan Data",
           icon: FileStack,
           roles: ["admin", "teacher"],
         },

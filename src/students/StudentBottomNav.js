@@ -6,7 +6,7 @@
 // state di App.js, bukan react-router. Pake <a href> bakal full page
 // reload ke URL yang gak ada, ujungnya blank/404.
 // ========================================================================
-import { Home, Calendar, ClipboardCheck, User } from "lucide-react";
+import { Home, Calendar, ClipboardCheck, BookOpen, User } from "lucide-react";
 
 export default function StudentBottomNav({ currentPage, onPageChange }) {
   const items = [
@@ -33,6 +33,14 @@ export default function StudentBottomNav({ currentPage, onPageChange }) {
       activeText: "text-green-800",
       activeBg: "bg-green-50",
       inactiveText: "text-green-500",
+    },
+    {
+      id: "student-belajar",
+      label: "Belajar",
+      icon: BookOpen,
+      activeText: "text-indigo-800",
+      activeBg: "bg-indigo-50",
+      inactiveText: "text-indigo-500",
     },
     {
       id: "student-lainnya",
