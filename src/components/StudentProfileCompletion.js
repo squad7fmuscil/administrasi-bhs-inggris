@@ -201,7 +201,7 @@ export default function StudentProfileCompletion({ currentUser }) {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-3 sm:p-4 md:p-6">
-      <div className="max-w-5xl mx-auto">
+      <div>
         {/* ====== HEADER ====== */}
         <div className="bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 rounded-xl sm:rounded-2xl shadow-lg p-5 sm:p-7 mb-5 sm:mb-6 relative overflow-hidden border border-blue-200/50 dark:border-slate-700">
           <div className="absolute inset-0 opacity-20 dark:opacity-10">
@@ -327,7 +327,7 @@ export default function StudentProfileCompletion({ currentUser }) {
             Tidak ada siswa yang cocok dengan filter ini.
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3">
             {filteredRows.map((r) => {
               const meta = STATUS_META[r.status];
               const StatusIcon = meta.icon;
