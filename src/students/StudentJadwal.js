@@ -5,21 +5,6 @@ import { supabase } from "../supabaseClient";
 import useStudentProfile from "./useStudentProfile";
 import { DAY_NAMES, getDayName, isOngoing } from "./StudentHelpers";
 
-// Jumat jam pelajarannya beda (lebih pendek) dari hari lain — dipake buat
-// nimpa start_time/end_time dari database khusus pas activeDay === "Jumat".
-// Key = nomor jam ke berapa (period), bukan dari data class_schedules.
-const FRIDAY_TIMES = {
-  1: { start: "06:30", end: "07:05" },
-  2: { start: "07:05", end: "07:40" },
-  3: { start: "07:40", end: "08:10" },
-  4: { start: "08:10", end: "08:40" },
-  5: { start: "08:40", end: "09:10" },
-  6: { start: "09:40", end: "10:10" },
-  7: { start: "10:10", end: "10:40" },
-  8: { start: "", end: "" },
-  9: { start: "", end: "" },
-};
-
 // Senin - Jumat (KBM cuma Senin-Jumat, Sabtu & Minggu libur)
 const SCHOOL_DAYS = DAY_NAMES.filter((d) => d !== "Minggu" && d !== "Sabtu");
 
@@ -112,7 +97,7 @@ export default function StudentJadwal() {
         <h2 className="text-lg font-bold text-gray-800">
           JADWAL PELAJARAN KELAS {CLASS_NAME}
         </h2>
-        <p className="text-xs font-semibold text-gray-400 tracking-wide">
+        <p className="text-xs font-semibold text-gray-600 tracking-wide">
           TAHUN AJARAN {academicYear}
         </p>
       </div>
@@ -162,16 +147,11 @@ export default function StudentJadwal() {
                 {daySchedule.map((item, idx) => {
                   const period = idx + 1;
 
-                  // Khusus hari Jumat, timpa waktu dari database pake jam
-                  // Jumat yang lebih pendek (FRIDAY_TIMES), berdasarkan
-                  // nomor jam ke berapa.
-                  const isJumat = activeDay === "Jumat";
-                  const startTime = isJumat
-                    ? FRIDAY_TIMES[period]?.start
-                    : item.start_time;
-                  const endTime = isJumat
-                    ? FRIDAY_TIMES[period]?.end
-                    : item.end_time;
+                  // Waktu langsung dari DB (class_schedules) — udah bener
+                  // buat semua hari termasuk Jumat, jadi gak perlu lagi
+                  // override manual kayak dulu (FRIDAY_TIMES).
+                  const startTime = item.start_time;
+                  const endTime = item.end_time;
 
                   const ongoing =
                     activeDay === getDayName() && isOngoing(startTime, endTime);

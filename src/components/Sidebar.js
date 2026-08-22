@@ -25,6 +25,7 @@ import {
   CalendarRange,
   CalendarClock,
   CalendarDays,
+  Table2,
   LogOut, // 🔥 TOMBOL LOGOUT DIIMPORT
 } from "lucide-react";
 
@@ -129,6 +130,12 @@ export default function Sidebar({
           id: "teachingjournal",
           label: "Jurnal Mengajar",
           icon: NotebookPen,
+          roles: ["admin", "teacher"],
+        },
+        {
+          id: "jadwalpelajaran",
+          label: "Jadwal Pelajaran",
+          icon: Table2,
           roles: ["admin", "teacher"],
         },
         {

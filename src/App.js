@@ -16,6 +16,7 @@ import GradeMain from "./page/grade/GradeMain";
 import StudentNotes from "./page/StudentNotes";
 import TeacherSchedule from "./page/TeacherSchedule";
 import TeachingJournal from "./page/TeachingJournal";
+import JadwalPelajaran from "./page/JadwalPelajaran";
 import SeatingChart from "./page/SeatingChart";
 import DutySchedule from "./page/DutySchedule";
 import Organigram from "./page/Organigram";
@@ -254,6 +255,9 @@ export default function App() {
 
       case "teachingjournal":
         return <TeachingJournal currentUser={currentUser} />;
+
+      case "jadwalpelajaran":
+        return <JadwalPelajaran currentUser={currentUser} />;
 
       case "seatingchart":
         return <SeatingChart currentUser={currentUser} />;
