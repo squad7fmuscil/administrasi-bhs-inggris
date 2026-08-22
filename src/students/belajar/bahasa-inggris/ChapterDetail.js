@@ -12,6 +12,7 @@
 // ========================================================================
 import React from "react";
 import { ArrowLeft, Construction } from "lucide-react";
+import { chapterData } from "./data/chapterData";
 
 export default function ChapterDetail({
   mapel,
@@ -19,6 +20,8 @@ export default function ChapterDetail({
   currentUser,
   onBack,
 }) {
+  const chapter = chapterData.find((c) => c.num === chapterNum);
+
   return (
     <div>
       <button
@@ -29,12 +32,15 @@ export default function ChapterDetail({
 
       <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
         <h2 className="text-xl font-bold text-gray-800 mb-1">
-          {mapel.nama} — Chapter {chapterNum}
+          {chapter
+            ? `${chapter.title}: ${chapter.subtitle}`
+            : `Chapter ${chapterNum}`}
         </h2>
         <div className="flex items-center justify-center gap-2 text-gray-400 mt-4">
           <Construction className="w-4 h-4" />
           <p className="text-sm">
-            Konten Theory / Examples / Practice / Quiz belum dipasang di sini.
+            Tab Theory / Examples / Practice / Quiz-nya nyusul, lagi dipindah
+            dari EasyMateri.js.
           </p>
         </div>
       </div>

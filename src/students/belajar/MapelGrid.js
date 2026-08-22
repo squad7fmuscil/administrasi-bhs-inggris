@@ -36,10 +36,7 @@ export default function MapelGrid({ mapelList, onSelectMapel }) {
           return (
             <div
               key={mapel.id}
-              onClick={() => {
-                console.log("CLICK CARD:", mapel.id, "isActive:", isActive);
-                isActive && onSelectMapel(mapel.id);
-              }}
+              onClick={() => isActive && onSelectMapel(mapel.id)}
               className={`
                 group relative overflow-hidden rounded-2xl
                 border border-black/5 shadow-sm

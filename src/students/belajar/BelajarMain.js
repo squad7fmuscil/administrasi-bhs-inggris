@@ -111,20 +111,13 @@ export default function BelajarMain({ currentUser }) {
   // ---------------------------------------------------------------------
   const openMapel = useCallback((mapelId) => {
     const mapel = MAPEL_LIST.find((m) => m.id === mapelId);
-    console.log("OPEN MAPEL:", {
-      mapelId,
-      mapel,
-      hasComponent: !!MAPEL_COMPONENTS[mapelId],
-    });
     // Guard ganda: mapel harus "active" DAN harus punya komponen terdaftar
     // di registry. Kalau salah satu gak kepenuhin, jangan pindah level --
     // daripada nge-render halaman kosong/error.
     if (!mapel || mapel.status !== "active" || !MAPEL_COMPONENTS[mapelId]) {
-      console.log("BLOCKED oleh guard, gak lanjut ke chapter-list");
       return;
     }
 
-    console.log("LOLOS guard, set view ke chapter-list untuk:", mapelId);
     setView({ level: "chapter-list", mapelId, chapterNum: null });
     window.scrollTo(0, 0);
   }, []);
@@ -149,8 +142,6 @@ export default function BelajarMain({ currentUser }) {
 
   const activeMapel = MAPEL_LIST.find((m) => m.id === view.mapelId) || null;
   const activeComponents = view.mapelId ? MAPEL_COMPONENTS[view.mapelId] : null;
-
-  console.log("RENDER BelajarMain:", { view, activeMapel, activeComponents });
 
   return (
     <div className="min-h-screen p-4 md:p-8">

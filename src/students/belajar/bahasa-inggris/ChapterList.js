@@ -1,23 +1,19 @@
 // src/students/belajar/bahasa-inggris/ChapterList.js
 // ========================================================================
-// ChapterList KHUSUS mapel Bahasa Inggris. PLACEHOLDER SEMENTARA.
+// Level 2 fitur Belajar, khusus Bahasa Inggris: daftar chapter.
+// Datanya dari ./data/chapterData.js (pindahan dari EasyMateri.js punya
+// guru). Chapter yang belum punya soal kuis (belum ada di
+// quizQuestionsMap) otomatis ditandain "Segera Hadir" & gak bisa diklik —
+// jadi kalau nanti nambah soal Chapter 3 misalnya, chapter itu otomatis
+// aktif sendiri, gak perlu ubah logic di sini.
 //
-// Kenapa ChapterList/ChapterDetail ditaruh per-folder-mapel (bukan 1 file
-// generic di root belajar/): karena tiap mapel kemungkinan besar butuh
-// bentuk konten beda-beda (Bhs Inggris: theory+practice teks, Matematika:
-// mungkin butuh render rumus, Informatika: mungkin butuh code block, dst).
-// Jadi tiap mapel bebas punya struktur ChapterList/ChapterDetail sendiri
-// tanpa harus maksa 1 komponen generic muat semua kebutuhan.
-//
-// Versi aslinya nanti bakal:
-// - Ambil daftar chapter dari ./data/chapterData.js (pindahan chapterData
-//   yang sekarang masih hardcoded di EasyMateri.js)
-// - Nampilin card per chapter (icon, judul, subtitle, badge status)
-// - Kasih badge "Lagi dipelajari minggu ini" kalau chapter itu lagi aktif
-// - Kasih indikator progress siswa (kalau kuis chapter itu udah dikerjain)
+// TODO nanti (belum di file ini):
+// - Badge "Lagi dipelajari minggu ini" berdasar unit yang lagi diajar
+// - Indikator progress siswa per chapter (skor kuis, status selesai)
 // ========================================================================
 import React from "react";
-import { ArrowLeft, Construction } from "lucide-react";
+import { ArrowLeft, Lock, ChevronRight } from "lucide-react";
+import { chapterData, quizQuestionsMap } from "./data/chapterData";
 
 export default function ChapterList({
   mapel,
@@ -25,7 +21,6 @@ export default function ChapterList({
   onSelectChapter,
   onBack,
 }) {
-  console.log("CHAPTERLIST RENDER, mapel:", mapel);
   return (
     <div>
       <button
@@ -34,19 +29,79 @@ export default function ChapterList({
         <ArrowLeft className="w-4 h-4" /> Kembali ke Pilih Mapel
       </button>
 
-      <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+      {/* Header mapel */}
+      <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-6 mb-5 flex items-center gap-4">
         <div
-          className={`w-16 h-16 mx-auto rounded-xl bg-gradient-to-br ${mapel.gradient} flex items-center justify-center shadow-md mb-4 text-3xl`}>
+          className={`w-14 h-14 rounded-xl bg-gradient-to-br ${mapel.gradient} flex items-center justify-center shadow-md text-3xl shrink-0`}>
           <span>{mapel.icon}</span>
         </div>
-        <h2 className="text-xl font-bold text-gray-800 mb-1">{mapel.nama}</h2>
-        <div className="flex items-center justify-center gap-2 text-gray-400 mt-4">
-          <Construction className="w-4 h-4" />
-          <p className="text-sm">
-            Daftar chapter belum dipasang di sini — nyusul setelah data chapter
-            dipindah dari EasyMateri.js.
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+            {mapel.nama}
+          </h1>
+          <p className="text-sm text-gray-500">
+            Pilih chapter yang mau kamu pelajari
           </p>
         </div>
+      </div>
+
+      {/* Daftar chapter */}
+      <div className="space-y-3">
+        {chapterData.map((chapter) => {
+          const isAvailable = Boolean(quizQuestionsMap[chapter.num]);
+
+          return (
+            <div
+              key={chapter.num}
+              onClick={() => isAvailable && onSelectChapter(chapter.num)}
+              className={`
+                relative overflow-hidden rounded-2xl border border-black/5 shadow-sm
+                bg-white p-4 sm:p-5
+                flex items-center gap-4
+                transition duration-200
+                ${
+                  isAvailable
+                    ? "cursor-pointer hover:shadow-lg hover:-translate-y-0.5"
+                    : "opacity-60 cursor-not-allowed"
+                }
+              `}>
+              <div
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${chapter.colors.gradient} flex items-center justify-center shadow-md text-2xl shrink-0`}>
+                <span>{chapter.icon}</span>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-gray-800 text-sm sm:text-base">
+                    {chapter.title}: {chapter.subtitle}
+                  </h3>
+                  {!isAvailable && (
+                    <span className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      <Lock className="w-3 h-3" />
+                      Segera Hadir
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-2">
+                  {chapter.description}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {chapter.topics.map((topic) => (
+                    <span
+                      key={topic}
+                      className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full bg-gray-50 ${chapter.colors.text}`}>
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {isAvailable && (
+                <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

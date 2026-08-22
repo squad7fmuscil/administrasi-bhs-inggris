@@ -13,6 +13,7 @@ const PAGE_TITLES = {
   "student-dashboard": "Beranda",
   "student-jadwal": "Jadwal Pelajaran",
   "student-presensi": "Presensi Saya",
+  "student-belajar": "Belajar",
   "student-lainnya": "Akun Saya",
 };
 
