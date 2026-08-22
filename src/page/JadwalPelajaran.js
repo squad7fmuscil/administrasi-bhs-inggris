@@ -326,308 +326,310 @@ export default function JadwalPelajaran() {
       );
 
   return (
-    <div className="max-w-5xl mx-auto p-4 space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-lg font-bold text-gray-800">
-          Kelola Jadwal Pelajaran
-        </h1>
-        <button
-          onClick={() => openAddModal(formData.day || "Senin", null)}
-          disabled={!selectedClass}
-          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-xl text-sm font-semibold">
-          <Plus className="w-4 h-4" />
-          Tambah Jadwal
-        </button>
-      </div>
-
-      {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          {success}
-        </div>
-      )}
-
-      {/* Pilih kelas */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center gap-3 flex-wrap">
-        <label className="text-sm font-semibold text-gray-600">Kelas:</label>
-        <select
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700">
-          {classes.length === 0 && <option value="">Belum ada kelas</option>}
-          {classes.map((c) => (
-            <option key={c} value={c}>
-              Kelas {c}
-            </option>
-          ))}
-        </select>
-
-        {!showAddClass ? (
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50 p-3 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h1 className="text-lg font-bold text-gray-800">
+            Kelola Jadwal Pelajaran
+          </h1>
           <button
-            onClick={() => setShowAddClass(true)}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-700">
-            + Kelas baru
+            onClick={() => openAddModal(formData.day || "Senin", null)}
+            disabled={!selectedClass}
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-xl text-sm font-semibold">
+            <Plus className="w-4 h-4" />
+            Tambah Jadwal
           </button>
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
+            <CheckCircle className="w-4 h-4 shrink-0" />
+            {success}
+          </div>
+        )}
+
+        {/* Pilih kelas */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center gap-3 flex-wrap">
+          <label className="text-sm font-semibold text-gray-600">Kelas:</label>
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700">
+            {classes.length === 0 && <option value="">Belum ada kelas</option>}
+            {classes.map((c) => (
+              <option key={c} value={c}>
+                Kelas {c}
+              </option>
+            ))}
+          </select>
+
+          {!showAddClass ? (
+            <button
+              onClick={() => setShowAddClass(true)}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+              + Kelas baru
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                autoFocus
+                value={newClassInput}
+                onChange={(e) => setNewClassInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddClass()}
+                placeholder="mis. 7C"
+                className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm w-24"
+              />
+              <button
+                onClick={handleAddClass}
+                className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-2.5 py-1.5 rounded-lg">
+                Simpan
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddClass(false);
+                  setNewClassInput("");
+                }}
+                className="text-xs text-gray-400 hover:text-gray-600">
+                Batal
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Grid jadwal */}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : !selectedClass ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400 text-sm shadow-sm">
+            Pilih atau tambah kelas dulu.
+          </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <input
-              autoFocus
-              value={newClassInput}
-              onChange={(e) => setNewClassInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddClass()}
-              placeholder="mis. 7C"
-              className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm w-24"
-            />
-            <button
-              onClick={handleAddClass}
-              className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-2.5 py-1.5 rounded-lg">
-              Simpan
-            </button>
-            <button
-              onClick={() => {
-                setShowAddClass(false);
-                setNewClassInput("");
-              }}
-              className="text-xs text-gray-400 hover:text-gray-600">
-              Batal
-            </button>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-500">
+                    <th className="py-2.5 px-3 font-semibold text-left w-14">
+                      Jam
+                    </th>
+                    {DAYS.map((day) => (
+                      <th
+                        key={day}
+                        className="py-2.5 px-3 font-semibold text-left min-w-[140px]">
+                        {day}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ALL_PERIODS.map((period) => {
+                    const anyDayHasPeriod = DAYS.some(
+                      (d) => JAM_SCHEDULE[d][period]?.start,
+                    );
+                    if (!anyDayHasPeriod) return null;
+
+                    return (
+                      <tr key={period} className="border-t border-gray-50">
+                        <td className="py-2 px-3 font-bold text-gray-400 align-top">
+                          {period}
+                        </td>
+                        {DAYS.map((day) => {
+                          const range = JAM_SCHEDULE[day][period];
+                          const disabled = !range?.start;
+                          const item = grid[day][period];
+
+                          if (disabled) {
+                            return (
+                              <td
+                                key={day}
+                                className="py-2 px-3 text-gray-200 align-top">
+                                —
+                              </td>
+                            );
+                          }
+
+                          return (
+                            <td key={day} className="py-1.5 px-1.5 align-top">
+                              <button
+                                onClick={() => handleCellClick(day, period)}
+                                className={`w-full text-left rounded-lg px-2.5 py-2 border transition group relative ${
+                                  item
+                                    ? "bg-blue-50 border-blue-100 hover:border-blue-300"
+                                    : "bg-gray-50 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50"
+                                }`}>
+                                {item ? (
+                                  <>
+                                    <p className="font-semibold text-gray-800 leading-tight">
+                                      {item.subject}
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 mt-0.5">
+                                      {item.teacher_name || "-"}
+                                    </p>
+                                    <p className="text-[10px] text-blue-500 font-medium mt-0.5">
+                                      {range.start}–{range.end}
+                                    </p>
+                                    <span
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(item);
+                                      }}
+                                      className="hidden group-hover:flex absolute top-1 right-1 items-center justify-center w-5 h-5 rounded-md bg-white border border-red-100 text-red-500 hover:bg-red-50">
+                                      <Trash2 className="w-3 h-3" />
+                                    </span>
+                                  </>
+                                ) : (
+                                  <p className="text-[11px] text-gray-300 flex items-center gap-1">
+                                    <Plus className="w-3 h-3" /> Kosong
+                                  </p>
+                                )}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Modal tambah/edit */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-gray-800">
+                  {editingSchedule ? "Edit Jadwal" : "Tambah Jadwal"}
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Hari
+                  </label>
+                  <select
+                    value={formData.day}
+                    disabled={!!editingSchedule}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        day: e.target.value,
+                        periods: [],
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm disabled:bg-gray-50 disabled:text-gray-400">
+                    {DAYS.map((day) => (
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Jam Ke {!editingSchedule && "(bisa pilih lebih dari satu)"}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {periodOptions.map((p) => {
+                      const active = formData.periods.includes(p);
+                      return (
+                        <button
+                          type="button"
+                          key={p}
+                          disabled={!!editingSchedule && !active}
+                          onClick={() => togglePeriod(p)}
+                          className={`w-9 h-9 rounded-lg text-sm font-semibold border transition ${
+                            active
+                              ? "bg-blue-600 border-blue-600 text-white"
+                              : "bg-white border-gray-200 text-gray-500 hover:border-blue-300"
+                          }`}>
+                          {p}
+                        </button>
+                      );
+                    })}
+                    {periodOptions.length === 0 && (
+                      <p className="text-xs text-gray-400">
+                        Semua jam di hari ini udah keisi.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Mapel
+                  </label>
+                  <input
+                    value={formData.subject}
+                    onChange={(e) =>
+                      setFormData({ ...formData, subject: e.target.value })
+                    }
+                    placeholder="mis. IPA"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Guru (opsional)
+                  </label>
+                  <input
+                    value={formData.teacher_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, teacher_name: e.target.value })
+                    }
+                    placeholder="mis. Syalfa Hauratunisa"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  {editingSchedule && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDelete(editingSchedule);
+                        closeModal();
+                      }}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50">
+                      Hapus
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300">
+                    {saving ? "Menyimpan..." : "Simpan"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Grid jadwal */}
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : !selectedClass ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400 text-sm shadow-sm">
-          Pilih atau tambah kelas dulu.
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs sm:text-sm border-collapse">
-              <thead>
-                <tr className="bg-gray-50 text-gray-500">
-                  <th className="py-2.5 px-3 font-semibold text-left w-14">
-                    Jam
-                  </th>
-                  {DAYS.map((day) => (
-                    <th
-                      key={day}
-                      className="py-2.5 px-3 font-semibold text-left min-w-[140px]">
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {ALL_PERIODS.map((period) => {
-                  const anyDayHasPeriod = DAYS.some(
-                    (d) => JAM_SCHEDULE[d][period]?.start,
-                  );
-                  if (!anyDayHasPeriod) return null;
-
-                  return (
-                    <tr key={period} className="border-t border-gray-50">
-                      <td className="py-2 px-3 font-bold text-gray-400 align-top">
-                        {period}
-                      </td>
-                      {DAYS.map((day) => {
-                        const range = JAM_SCHEDULE[day][period];
-                        const disabled = !range?.start;
-                        const item = grid[day][period];
-
-                        if (disabled) {
-                          return (
-                            <td
-                              key={day}
-                              className="py-2 px-3 text-gray-200 align-top">
-                              —
-                            </td>
-                          );
-                        }
-
-                        return (
-                          <td key={day} className="py-1.5 px-1.5 align-top">
-                            <button
-                              onClick={() => handleCellClick(day, period)}
-                              className={`w-full text-left rounded-lg px-2.5 py-2 border transition group relative ${
-                                item
-                                  ? "bg-blue-50 border-blue-100 hover:border-blue-300"
-                                  : "bg-gray-50 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50"
-                              }`}>
-                              {item ? (
-                                <>
-                                  <p className="font-semibold text-gray-800 leading-tight">
-                                    {item.subject}
-                                  </p>
-                                  <p className="text-[11px] text-gray-500 mt-0.5">
-                                    {item.teacher_name || "-"}
-                                  </p>
-                                  <p className="text-[10px] text-blue-500 font-medium mt-0.5">
-                                    {range.start}–{range.end}
-                                  </p>
-                                  <span
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDelete(item);
-                                    }}
-                                    className="hidden group-hover:flex absolute top-1 right-1 items-center justify-center w-5 h-5 rounded-md bg-white border border-red-100 text-red-500 hover:bg-red-50">
-                                    <Trash2 className="w-3 h-3" />
-                                  </span>
-                                </>
-                              ) : (
-                                <p className="text-[11px] text-gray-300 flex items-center gap-1">
-                                  <Plus className="w-3 h-3" /> Kosong
-                                </p>
-                              )}
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Modal tambah/edit */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-gray-800">
-                {editingSchedule ? "Edit Jadwal" : "Tambah Jadwal"}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Hari
-                </label>
-                <select
-                  value={formData.day}
-                  disabled={!!editingSchedule}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      day: e.target.value,
-                      periods: [],
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm disabled:bg-gray-50 disabled:text-gray-400">
-                  {DAYS.map((day) => (
-                    <option key={day} value={day}>
-                      {day}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Jam Ke {!editingSchedule && "(bisa pilih lebih dari satu)"}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {periodOptions.map((p) => {
-                    const active = formData.periods.includes(p);
-                    return (
-                      <button
-                        type="button"
-                        key={p}
-                        disabled={!!editingSchedule && !active}
-                        onClick={() => togglePeriod(p)}
-                        className={`w-9 h-9 rounded-lg text-sm font-semibold border transition ${
-                          active
-                            ? "bg-blue-600 border-blue-600 text-white"
-                            : "bg-white border-gray-200 text-gray-500 hover:border-blue-300"
-                        }`}>
-                        {p}
-                      </button>
-                    );
-                  })}
-                  {periodOptions.length === 0 && (
-                    <p className="text-xs text-gray-400">
-                      Semua jam di hari ini udah keisi.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Mapel
-                </label>
-                <input
-                  value={formData.subject}
-                  onChange={(e) =>
-                    setFormData({ ...formData, subject: e.target.value })
-                  }
-                  placeholder="mis. IPA"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Guru (opsional)
-                </label>
-                <input
-                  value={formData.teacher_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, teacher_name: e.target.value })
-                  }
-                  placeholder="mis. Syalfa Hauratunisa"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                {editingSchedule && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleDelete(editingSchedule);
-                      closeModal();
-                    }}
-                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50">
-                    Hapus
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300">
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
