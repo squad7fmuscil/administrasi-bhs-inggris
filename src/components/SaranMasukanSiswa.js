@@ -7,9 +7,20 @@
 // wali kelas yang lagi login).
 //
 // Klik badge status di tiap kartu buat siklus statusnya:
-// baru -> dibaca -> ditindaklanjuti -> baru (lagi).
+// baru -> dibaca -> ditindaklanjuti.
+//
+// TAMBAHAN biar gak numpuk kalau siswa banyak yang kirim saran:
+// 1. Kartu yang statusnya udah "Ditindaklanjuti" otomatis gak
+//    ditampilin lagi di sini (query-nya udah nge-exclude, bukan cuma
+//    disembunyiin di layar) — datanya TETEP ada di database, cuma gak
+//    nongol lagi di dashboard.
+// 2. Ada tombol Hapus (ikon tempat sampah) di tiap kartu buat beres-
+//    beres manual kapan aja, gak perlu nunggu status jadi
+//    "Ditindaklanjuti" dulu (misal buat saran yang gak relevan/spam).
+//    Ini beneran ngehapus barisnya dari database.
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
+import { Trash2 } from "lucide-react";
 
 const STATUS_META = {
   baru: {
@@ -30,8 +41,7 @@ const STATUS_META = {
 
 const cycleStatus = (current) => {
   if (current === "baru") return "dibaca";
-  if (current === "dibaca") return "ditindaklanjuti";
-  return "baru";
+  return "ditindaklanjuti";
 };
 
 const formatDateTime = (iso) => {
@@ -49,6 +59,7 @@ export default function SaranMasukanSiswa({ classId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (!classId) return;
@@ -63,6 +74,9 @@ export default function SaranMasukanSiswa({ classId }) {
             "id, message, status, created_at, users:student_id (full_name)",
           )
           .eq("class_id", classId)
+          // Yang udah "Ditindaklanjuti" gak usah ikut ke-fetch — biar
+          // dashboard gak numpuk kalau siswa yang kirim banyak.
+          .neq("status", "ditindaklanjuti")
           .order("created_at", { ascending: false })
           .limit(30);
 
@@ -89,15 +103,45 @@ export default function SaranMasukanSiswa({ classId }) {
         .eq("id", item.id);
 
       if (err) throw err;
-      setItems((prev) =>
-        prev.map((it) =>
-          it.id === item.id ? { ...it, status: nextStatus } : it,
-        ),
-      );
+
+      if (nextStatus === "ditindaklanjuti") {
+        // Langsung ilang dari daftar begitu ditandain selesai, gak
+        // perlu nunggu re-fetch.
+        setItems((prev) => prev.filter((it) => it.id !== item.id));
+      } else {
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id ? { ...it, status: nextStatus } : it,
+          ),
+        );
+      }
     } catch (err) {
       console.error("[SaranMasukanSiswa] Gagal update status:", err);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (item) => {
+    const confirmed = window.confirm(
+      `Hapus saran dari ${item.users?.full_name || "siswa ini"}? Aksi ini gak bisa dibatalin.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(item.id);
+    try {
+      const { error: err } = await supabase
+        .from("saran_masukan")
+        .delete()
+        .eq("id", item.id);
+
+      if (err) throw err;
+      setItems((prev) => prev.filter((it) => it.id !== item.id));
+    } catch (err) {
+      console.error("[SaranMasukanSiswa] Gagal hapus saran:", err);
+      window.alert("Gagal hapus saran, coba lagi.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -146,13 +190,23 @@ export default function SaranMasukanSiswa({ classId }) {
                 <p className="text-sm text-slate-600 dark:text-slate-300">
                   {item.message}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => handleStatusClick(item)}
-                  disabled={updatingId === item.id}
-                  className={`mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full disabled:opacity-50 ${meta.badge}`}>
-                  {updatingId === item.id ? "Menyimpan..." : meta.label}
-                </button>
+                <div className="mt-2.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleStatusClick(item)}
+                    disabled={updatingId === item.id}
+                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full disabled:opacity-50 ${meta.badge}`}>
+                    {updatingId === item.id ? "Menyimpan..." : meta.label}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item)}
+                    disabled={deletingId === item.id}
+                    title="Hapus saran ini"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50 transition-colors">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             );
           })}
