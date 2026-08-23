@@ -99,7 +99,7 @@ export default function Students() {
       const classes = await fetchTeacherClasses(
         userData.teacher_id,
         userData.homeroom_class_id,
-        userData.role
+        userData.role,
       );
 
       console.log("Classes from fetchTeacherClasses:", classes);
@@ -108,7 +108,7 @@ export default function Students() {
       let query = supabase
         .from("students")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("full_name", { ascending: true });
 
       // Filter berdasarkan kelas yang diampu
       if (classes && classes.length > 0) {
@@ -153,21 +153,21 @@ export default function Students() {
             .toLowerCase()
             .includes(filters.search.toLowerCase()) ||
           (student.nis &&
-            student.nis.toLowerCase().includes(filters.search.toLowerCase()))
+            student.nis.toLowerCase().includes(filters.search.toLowerCase())),
       );
     }
 
     // Filter by class
     if (filters.class !== "Semua Kelas") {
       filtered = filtered.filter(
-        (student) => student.class_id === filters.class
+        (student) => student.class_id === filters.class,
       );
     }
 
     // Filter by gender
     if (filters.gender !== "Semua") {
       filtered = filtered.filter(
-        (student) => student.gender === filters.gender
+        (student) => student.gender === filters.gender,
       );
     }
 
@@ -335,26 +335,26 @@ export default function Students() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">
             {stats.totalKelas}
           </div>
           <div className="text-sm text-blue-800">Total Kelas</div>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-green-600">
             {stats.totalSiswa}
           </div>
           <div className="text-sm text-green-800">Total Siswa</div>
         </div>
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-orange-600">
             {stats.lakiLaki}
           </div>
           <div className="text-sm text-orange-800">Laki-laki</div>
         </div>
-        <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+        <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-pink-600">
             {stats.perempuan}
           </div>
@@ -542,66 +542,76 @@ export default function Students() {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <div className="mb-4 text-sm text-gray-600">
-          Menampilkan {filteredStudents.length} dari {students.length} siswa
-        </div>
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-2 text-left">No.</th>
-              <th className="px-4 py-2 text-left">Nama</th>
-              <th className="px-4 py-2 text-left">NIS</th>
-              <th className="px-4 py-2 text-left">Jenis Kelamin</th>
-              <th className="px-4 py-2 text-left">Kelas</th>
-              <th className="px-4 py-2 text-left">Tahun Ajaran</th>
-              <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2 text-left">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStudents.map((student, index) => (
-              <tr key={student.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">{index + 1}</td>
-                <td className="px-4 py-2">{student.full_name}</td>
-                <td className="px-4 py-2">{student.nis}</td>
-                <td className="px-4 py-2">
-                  {student.gender === "L" ? "Laki-laki" : "Perempuan"}
-                </td>
-                <td className="px-4 py-2">{student.class_id}</td>
-                <td className="px-4 py-2">{student.academic_year}</td>
-                <td className="px-4 py-2">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      student.is_active
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}>
-                    {student.is_active ? "Aktif" : "Tidak Aktif"}
-                  </span>
-                </td>
-                <td className="px-4 py-2 space-x-2">
-                  <button
-                    onClick={() => handleEdit(student)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(student.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
-                    Hapus
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {filters.class === "Semua Kelas" ? (
+          <p className="text-center py-8 text-gray-500">
+            Pilih kelas terlebih dahulu untuk menampilkan data siswa
+          </p>
+        ) : (
+          <>
+            <div className="mb-4 text-sm text-gray-600">
+              Menampilkan {filteredStudents.length} dari {students.length} siswa
+            </div>
+            <table className="min-w-full table-auto">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left">No.</th>
+                  <th className="px-4 py-2 text-left">Nama</th>
+                  <th className="px-4 py-2 text-left">NIS</th>
+                  <th className="px-4 py-2 text-left">Jenis Kelamin</th>
+                  <th className="px-4 py-2 text-left">Kelas</th>
+                  <th className="px-4 py-2 text-left">Tahun Ajaran</th>
+                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-left">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.map((student, index) => (
+                  <tr key={student.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-2">{index + 1}</td>
+                    <td className="px-4 py-2">{student.full_name}</td>
+                    <td className="px-4 py-2">{student.nis}</td>
+                    <td className="px-4 py-2">
+                      {student.gender === "L" ? "Laki-laki" : "Perempuan"}
+                    </td>
+                    <td className="px-4 py-2">{student.class_id}</td>
+                    <td className="px-4 py-2">{student.academic_year}</td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          student.is_active
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                        {student.is_active ? "Aktif" : "Tidak Aktif"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 space-x-2">
+                      <button
+                        onClick={() => handleEdit(student)}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(student.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                        Hapus
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-        {filteredStudents.length === 0 && !loading && (
-          <p className="text-center py-4 text-gray-500">Tidak ada data siswa</p>
-        )}
+            {filteredStudents.length === 0 && !loading && (
+              <p className="text-center py-4 text-gray-500">
+                Tidak ada data siswa
+              </p>
+            )}
 
-        {loading && (
-          <p className="text-center py-4 text-gray-500">Loading...</p>
+            {loading && (
+              <p className="text-center py-4 text-gray-500">Loading...</p>
+            )}
+          </>
         )}
       </div>
     </div>
