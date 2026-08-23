@@ -45,8 +45,8 @@ const ATTENDANCE_TIERS = [
     className: "bg-green-50 border-green-200 text-green-700",
     message: (r) => (
       <>
-        Kehadiran kamu <strong>{r}%</strong> — bagus sekali! Terus jaga
-        konsistensinya 🌟
+        Kehadiran Kamu <strong>{r}%</strong> — Bagus Sekali ! Terus Jaga
+        Konsistensinya 🌟
       </>
     ),
   },
@@ -56,8 +56,8 @@ const ATTENDANCE_TIERS = [
     className: "bg-blue-50 border-blue-200 text-blue-700",
     message: (r) => (
       <>
-        Kehadiran kamu <strong>{r}%</strong> — udah cukup baik! Ayo ditingkatkan
-        lagi biar makin mantap 👍
+        Kehadiran Kamu <strong>{r}%</strong> — Sudah Cukup Baik ! Ayo
+        Ditingkatkan Lagi Biar Makin Mantap 👍
       </>
     ),
   },
@@ -67,9 +67,9 @@ const ATTENDANCE_TIERS = [
     className: "bg-red-50 border-red-200 text-red-700",
     message: (r) => (
       <>
-        Kehadiran kamu saat ini <strong>{r}%</strong>, masih di bawah batas
-        minimal 70%. Kalau terus di bawah 70%, ini bisa berdampak ke masalah
-        akademik ke depannya. Yuk lebih rajin masuk kelas mulai sekarang ya!
+        Kehadiran Kamu Saat Ini <strong>{r}%</strong>, Masih Di Bawah Batas
+        Minimal 70%. Kalau Terus Di Bawah 70%, Ini Bisa Berdampak Ke Masalah
+        Akademik Ke Depannya. Yuk Lebih Rajin Masuk Kelas Mulai Sekarang Ya !
       </>
     ),
   },
@@ -553,11 +553,11 @@ export default function StudentPresensi() {
               Yuk, Tingkatkan Kehadiranmu!
             </h3>
             <p className="text-sm text-gray-700 leading-relaxed">
-              Kehadiran kamu masih{" "}
+              Kehadiran Kamu Masih{" "}
               <strong className="text-red-600">
                 {attendanceRate.toFixed(1)}%
               </strong>{" "}
-              — di bawah batas minimal 70%. Yuk lebih rajin masuk kelas ya!
+              — Dibawah Batas Minimal 70%. Yuk Lebih Rajin Masuk Kelas Ya !
             </p>
             <button
               onClick={() => setShowLowAttendanceAlert(false)}

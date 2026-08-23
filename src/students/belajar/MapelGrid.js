@@ -22,7 +22,7 @@ export default function MapelGrid({ mapelList, onSelectMapel }) {
               Belajar
             </h1>
             <p className="text-sm sm:text-base text-gray-600">
-              Pilih mata pelajaran yang mau kamu pelajari
+              Pilih Mata Pelajaran Yang Mau Dipelajari
             </p>
           </div>
         </div>

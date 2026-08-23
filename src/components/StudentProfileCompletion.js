@@ -11,8 +11,11 @@
 //   ada row sama sekali (bukan row kosong).
 //
 // ASUMSI YANG PERLU DICEK:
-// - Kolom `students.class_id` dipake buat filter per kelas (samain kayak
-//   DashboardHomeTeacher.js). Kalau nama kolomnya beda, sesuaikan query.
+// - `student_profile_details.student_id` itu FOREIGN KEY ke `users.id`
+//   (BUKAN ke `students.id`). Buat nyambungin ke tabel `students`, harus
+//   lewat kolom `students.user_id` (students.user_id -> users.id).
+//   Makanya query `students` di bawah ini narik kolom `user_id` juga, dan
+//   proses merge-nya pake `s.user_id` sebagai key, bukan `s.id`.
 // - Role "admin" bisa liat semua kelas (dropdown filter), role "teacher"
 //   di-scope otomatis ke currentUser.homeroom_class_id aja (gak ada
 //   dropdown, cuma liat kelasnya sendiri) — samain kayak fitur wali kelas
@@ -27,7 +30,9 @@ import {
   Search,
   ChevronDown,
   Users,
+  FileDown,
 } from "lucide-react";
+import { exportStudentProfilePDF } from "./StudentProfilePDF";
 
 // Field yang dianggap "wajib" buat status Lengkap. Samain persis sama
 // field di form ProfileInfo (StudentProfile.js).
@@ -90,6 +95,11 @@ export default function StudentProfileCompletion({ currentUser }) {
     isAdmin ? "all" : currentUser?.homeroom_class_id || "all",
   );
 
+  // ====== SELEKSI SISWA UNTUK EXPORT PDF ======
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [exporting, setExporting] = useState(false);
+  const [academicYear, setAcademicYear] = useState(null); // format "2026/2027", buat header PDF
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -97,7 +107,7 @@ export default function StudentProfileCompletion({ currentUser }) {
       try {
         let studentQuery = supabase
           .from("students")
-          .select("id, full_name, nis, class_id")
+          .select("id, full_name, nis, class_id, user_id")
           .eq("is_active", true)
           .order("full_name", { ascending: true });
 
@@ -112,6 +122,7 @@ export default function StudentProfileCompletion({ currentUser }) {
         const [
           { data: students, error: studentErr },
           { data: details, error: detailErr },
+          { data: activeYear },
         ] = await Promise.all([
           studentQuery,
           supabase
@@ -119,10 +130,17 @@ export default function StudentProfileCompletion({ currentUser }) {
             .select(
               "student_id, alamat, no_hp, nama_ortu, no_hp_ortu, updated_at",
             ),
+          supabase
+            .from("academic_years")
+            .select("year")
+            .eq("is_active", true)
+            .limit(1),
         ]);
 
         if (studentErr) throw studentErr;
         if (detailErr) throw detailErr;
+
+        setAcademicYear(activeYear?.[0]?.year || null);
 
         const detailMap = {};
         (details || []).forEach((d) => {
@@ -130,7 +148,9 @@ export default function StudentProfileCompletion({ currentUser }) {
         });
 
         const merged = (students || []).map((s) => {
-          const detail = detailMap[s.id] || null;
+          // student_profile_details.student_id nunjuk ke users.id, yang di
+          // tabel students disimpen di kolom user_id (BUKAN students.id).
+          const detail = detailMap[s.user_id] || null;
           return {
             ...s,
             detail,
@@ -139,6 +159,7 @@ export default function StudentProfileCompletion({ currentUser }) {
         });
 
         setRows(merged);
+        setSelectedIds(new Set());
 
         // Dropdown filter kelas cuma relevan buat admin (wali kelas udah
         // otomatis ke-scope 1 kelas, gak butuh filter kelas lagi).
@@ -185,6 +206,50 @@ export default function StudentProfileCompletion({ currentUser }) {
       return true;
     });
   }, [rows, statusFilter, classFilter, search]);
+
+  // "Pilih semua" ngikutin hasil filter yang lagi ditampilin, bukan semua
+  // siswa di kelas -- biar konsisten sama apa yang keliatan di layar.
+  const allFilteredSelected =
+    filteredRows.length > 0 && filteredRows.every((r) => selectedIds.has(r.id));
+
+  const toggleSelectOne = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllFiltered = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) {
+        // Semua yang keliatan lagi kepilih -> unselect semua yang keliatan.
+        filteredRows.forEach((r) => next.delete(r.id));
+      } else {
+        filteredRows.forEach((r) => next.add(r.id));
+      }
+      return next;
+    });
+  };
+
+  const handleExportPDF = async () => {
+    const selectedRows = rows.filter((r) => selectedIds.has(r.id));
+    if (selectedRows.length === 0) return;
+
+    setExporting(true);
+    try {
+      const result = await exportStudentProfilePDF(selectedRows, {
+        academicYear,
+      });
+      if (!result.success) {
+        setError(result.message || "Gagal export PDF.");
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -321,6 +386,36 @@ export default function StudentProfileCompletion({ currentUser }) {
           )}
         </div>
 
+        {/* ====== TOOLBAR SELEKSI & EXPORT PDF ====== */}
+        {filteredRows.length > 0 && (
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl shadow-md p-3 sm:p-4 border border-slate-100 dark:border-slate-700 mb-4 flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                onChange={toggleSelectAllFiltered}
+                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-400"
+              />
+              Pilih Semua ({filteredRows.length})
+              {selectedIds.size > 0 && (
+                <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                  · {selectedIds.size} dipilih
+                </span>
+              )}
+            </label>
+
+            <button
+              onClick={handleExportPDF}
+              disabled={selectedIds.size === 0 || exporting}
+              className="flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed px-4 py-2 rounded-lg shadow-sm transition">
+              <FileDown size={16} />
+              {exporting
+                ? "Membuat PDF..."
+                : `Export PDF${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}`}
+            </button>
+          </div>
+        )}
+
         {/* ====== LIST SISWA ====== */}
         {filteredRows.length === 0 ? (
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-100 dark:border-slate-700 p-8 text-center text-slate-400 dark:text-slate-500 text-sm shadow-sm">
@@ -336,34 +431,47 @@ export default function StudentProfileCompletion({ currentUser }) {
               return (
                 <div
                   key={r.id}
-                  className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                  <button
-                    onClick={() =>
-                      setExpandedId((id) => (id === r.id ? null : r.id))
-                    }
-                    className="w-full flex items-center justify-between gap-3 p-4 text-left">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                        {r.full_name}
-                      </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500">
-                        NIS {r.nis || "-"} · Kelas {r.class_id || "-"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${meta.badge}`}>
-                        <StatusIcon size={13} />
-                        {meta.label}
-                      </span>
-                      <ChevronDown
-                        size={16}
-                        className={`text-slate-400 transition-transform ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
-                  </button>
+                  className={`bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border shadow-sm overflow-hidden transition ${
+                    selectedIds.has(r.id)
+                      ? "border-indigo-400 dark:border-indigo-500 ring-2 ring-indigo-100 dark:ring-indigo-900/50"
+                      : "border-slate-100 dark:border-slate-700"
+                  }`}>
+                  <div className="w-full flex items-center gap-3 p-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(r.id)}
+                      onChange={() => toggleSelectOne(r.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 shrink-0 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-400"
+                    />
+                    <button
+                      onClick={() =>
+                        setExpandedId((id) => (id === r.id ? null : r.id))
+                      }
+                      className="flex-1 min-w-0 flex items-center justify-between gap-3 text-left">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                          {r.full_name}
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          NIS {r.nis || "-"} · Kelas {r.class_id || "-"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${meta.badge}`}>
+                          <StatusIcon size={13} />
+                          {meta.label}
+                        </span>
+                        <ChevronDown
+                          size={16}
+                          className={`text-slate-400 transition-transform ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </div>
+                    </button>
+                  </div>
 
                   {isExpanded && (
                     <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-700 pt-3">

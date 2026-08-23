@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { formatDateShort } from "./StudentHelpers";
+import { Pin } from "lucide-react";
 
 export default function StudentPengumuman({ student }) {
   const [announcements, setAnnouncements] = useState([]);
@@ -22,10 +23,11 @@ export default function StudentPengumuman({ student }) {
         const { data, error: err } = await supabase
           .from("pengumuman")
           // target_class null = pengumuman umum buat semua kelas
-          .select("id, title, content, created_at, target_class")
+          .select("id, title, content, created_at, target_class, is_pinned")
           .or(
             `target_class.eq.${student.homeroom_class_id},target_class.is.null`,
           )
+          .order("is_pinned", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(30);
 
@@ -69,9 +71,24 @@ export default function StudentPengumuman({ student }) {
   return (
     <div className="space-y-2">
       {announcements.map((item) => (
-        <div key={item.id} className="bg-gray-50 rounded-xl p-3">
+        <div
+          key={item.id}
+          className={`rounded-xl p-3 ${
+            item.is_pinned
+              ? "bg-amber-50 border border-amber-200"
+              : "bg-gray-50"
+          }`}>
           <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-gray-800 text-sm">{item.title}</p>
+            <p className="font-semibold text-gray-800 text-sm flex items-center gap-1.5 min-w-0">
+              {item.is_pinned && (
+                <Pin
+                  size={13}
+                  fill="currentColor"
+                  className="text-amber-600 shrink-0"
+                />
+              )}
+              <span className="truncate">{item.title}</span>
+            </p>
             <span className="text-[11px] text-gray-400 shrink-0">
               {formatDateShort(item.created_at)}
             </span>

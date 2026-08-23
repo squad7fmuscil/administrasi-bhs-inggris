@@ -1,14 +1,27 @@
-import { Home, Settings, Monitor, LogOut } from "lucide-react";
+import {
+  Home,
+  Settings,
+  Monitor,
+  LogOut,
+  ClipboardList,
+  UserCheck,
+  BookOpen,
+} from "lucide-react";
 
-// ✅ NEW: Bottom navbar khusus mobile (lg:hidden), isinya menu utama admin:
-// Home, Pengaturan, Monitor System, Logout.
+// ✅ Bottom navbar khusus mobile (lg:hidden).
+// Sekarang beda isi menu tergantung role:
+// - role="admin"  -> Home, Pengaturan, Monitor System, Keluar (yang lama)
+// - role="guru" / "walikelas" -> Home, Presensi Siswa, Presensi Guru, Jurnal, Keluar
 //
-// ✅ Tiap tombol punya warna pastel sendiri (senada sama card "Aksi Cepat"
-// yang lama) biar gampang dibedain sekilas, dan label teksnya dibikin gelap
-// & tebal (bukan abu-abu pudar) biar tetep jelas dibaca — termasuk buat
-// pengguna yang lebih senior.
-export default function BottomNav({ currentPage, onPageChange, onLogout }) {
-  const navItems = [
+// Tiap tombol tetep punya warna pastel sendiri biar gampang dibedain sekilas,
+// label teksnya gelap & tebal biar tetep jelas dibaca.
+export default function BottomNav({
+  currentPage,
+  onPageChange,
+  onLogout,
+  role = "admin", // "admin" | "guru" | "walikelas"
+}) {
+  const adminNavItems = [
     {
       id: "dashboard",
       label: "Home",
@@ -37,6 +50,49 @@ export default function BottomNav({ currentPage, onPageChange, onLogout }) {
       labelColor: "text-blue-700",
     },
   ];
+
+  // role guru / walikelas
+  const guruNavItems = [
+    {
+      id: "dashboard",
+      label: "Home",
+      icon: Home,
+      bg: "bg-indigo-100",
+      iconColor: "text-indigo-600",
+      activeBg: "bg-indigo-500",
+      labelColor: "text-indigo-700",
+    },
+    {
+      id: "attendance",
+      label: "Presensi Siswa",
+      icon: ClipboardList,
+      bg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      activeBg: "bg-emerald-500",
+      labelColor: "text-emerald-700",
+    },
+    {
+      id: "teacherattendance",
+      label: "Presensi Guru",
+      icon: UserCheck,
+      bg: "bg-blue-100",
+      iconColor: "text-blue-600",
+      activeBg: "bg-blue-500",
+      labelColor: "text-blue-700",
+    },
+    {
+      id: "teachingjournal",
+      label: "Jurnal",
+      icon: BookOpen,
+      bg: "bg-violet-100",
+      iconColor: "text-violet-600",
+      activeBg: "bg-violet-500",
+      labelColor: "text-violet-700",
+    },
+  ];
+
+  const navItems =
+    role === "guru" || role === "walikelas" ? guruNavItems : adminNavItems;
 
   return (
     <nav

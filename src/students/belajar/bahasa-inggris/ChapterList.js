@@ -40,7 +40,7 @@ export default function ChapterList({
             {mapel.nama}
           </h1>
           <p className="text-sm text-gray-500">
-            Pilih chapter yang mau kamu pelajari
+            Pilih Chapter Yang Mau Kamu Pelajari
           </p>
         </div>
       </div>

@@ -5,7 +5,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   User,
-  Clock,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import BottomNav from "./BottomNav";
@@ -258,26 +257,23 @@ export default function Layout({
             {/* Right Section - Jam, User Info & Logout */}
             <div className="flex items-center gap-2">
               {/* Jam - Desktop, di sebelah Profile */}
-              <div className="hidden md:flex flex-col items-end px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl border border-blue-600 leading-none shadow-sm">
-                <span className="text-sm font-bold font-mono tracking-tight text-white">
+              <div className="hidden md:flex flex-col items-end px-3 py-1.5 bg-blue-100 rounded-xl border border-blue-200 leading-none shadow-sm">
+                <span className="text-lg font-bold font-mono tracking-tight text-blue-700">
                   {formatClockTime()}
                 </span>
-                <span className="text-[11px] text-blue-100 font-medium mt-1 whitespace-nowrap">
+                <span className="text-xs text-blue-600 font-semibold mt-0.5 whitespace-nowrap">
                   {formatClockDate()}
                 </span>
               </div>
 
               {/* Jam - Mobile, di sebelah tombol Logout */}
-              <div className="flex md:hidden items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg border border-blue-600 shadow-sm">
-                <Clock size={14} className="text-white shrink-0" />
-                <div className="flex flex-col leading-none">
-                  <span className="text-xs font-bold font-mono tracking-tight text-white">
-                    {formatClockTime()}
-                  </span>
-                  <span className="text-[9px] text-blue-100 font-medium mt-0.5 whitespace-nowrap">
-                    {formatClockDate(true)}
-                  </span>
-                </div>
+              <div className="flex md:hidden flex-col items-end px-2.5 py-1.5 bg-blue-100 rounded-lg border border-blue-200 leading-none shadow-sm">
+                <span className="text-sm font-bold font-mono tracking-tight text-blue-700">
+                  {formatClockTime()}
+                </span>
+                <span className="text-[11px] text-blue-600 font-semibold mt-0.5 whitespace-nowrap">
+                  {formatClockDate()}
+                </span>
               </div>
 
               {/* User Info Desktop */}
@@ -323,10 +319,15 @@ export default function Layout({
       </div>
 
       {/* Bottom Navbar - mobile only */}
+      {/* ✅ role dikirim dari currentUser.role: "admin" tetep Home-Pengaturan-Monitor,
+          selain itu (teacher/walikelas) dianggap "guru" -> Home-Presensi Siswa-
+          Presensi Guru-Jurnal. Kalo nanti ada field khusus buat bedain walikelas
+          vs guru biasa (misal currentUser.is_homeroom), tinggal sesuaikan di sini. */}
       <BottomNav
         currentPage={currentPage}
         onPageChange={onPageChange}
         onLogout={handleLogout}
+        role={currentUser?.role === "admin" ? "admin" : "guru"}
       />
     </div>
   );
