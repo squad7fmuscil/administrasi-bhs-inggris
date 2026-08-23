@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Menu,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
   User,
+  ChevronDown,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import BottomNav from "./BottomNav";
@@ -19,6 +20,29 @@ export default function Layout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  // ✅ NEW: Dropdown akun di header desktop (Profile & Keluar), setara
+  // sama tombol "Akun" di BottomNav versi mobile.
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const accountMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showAccountMenu) return;
+    function handleClickOutside(event) {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target)
+      ) {
+        setShowAccountMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showAccountMenu]);
+
+  const handleProfileClick = () => {
+    setShowAccountMenu(false);
+    if (onPageChange) onPageChange("profile");
+  };
 
   // ✅ NEW: Jam live di header - selalu tampil di semua halaman karena
   // header ini sticky (ngga ikut ke-scroll seperti banner di Dashboard).
@@ -276,35 +300,75 @@ export default function Layout({
                 </span>
               </div>
 
-              {/* User Info Desktop */}
-              <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-                <div className="relative">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                    <User size={16} className="text-white" />
+              {/* User Info Desktop - klik buat buka dropdown Profile & Keluar */}
+              <div className="relative hidden md:block" ref={accountMenuRef}>
+                <button
+                  onClick={() => setShowAccountMenu((prev) => !prev)}
+                  className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100 hover:border-blue-200 transition-colors">
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                      <User size={16} className="text-white" />
+                    </div>
+                    {/* Status Online - Titik Hijau */}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm">
+                      <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75"></div>
+                    </div>
                   </div>
-                  {/* Status Online - Titik Hijau */}
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm">
-                    <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75"></div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-semibold text-gray-800">
+                      {currentUser?.full_name || currentUser?.nama || "User"}
+                    </span>
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                      {currentUser?.role === "admin"
+                        ? "Admin"
+                        : currentUser?.role === "teacher"
+                          ? "Guru"
+                          : "User"}
+                    </span>
                   </div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-800">
-                    {currentUser?.full_name || currentUser?.nama || "User"}
-                  </span>
-                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    {currentUser?.role === "admin"
-                      ? "Admin"
-                      : currentUser?.role === "teacher"
-                        ? "Guru"
-                        : "User"}
-                  </span>
-                </div>
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transition-transform ${
+                      showAccountMenu ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {showAccountMenu && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50">
+                    <button
+                      onClick={handleProfileClick}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-left hover:bg-slate-50 transition-colors">
+                      <span className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                        <User size={16} strokeWidth={2.2} />
+                      </span>
+                      <span className="text-sm font-semibold text-slate-700">
+                        Profile
+                      </span>
+                    </button>
+                    <div className="h-px bg-gray-100 mx-1" />
+                    <button
+                      onClick={() => {
+                        setShowAccountMenu(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-left hover:bg-rose-50 transition-colors">
+                      <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                        <LogOut size={16} strokeWidth={2.2} />
+                      </span>
+                      <span className="text-sm font-semibold text-rose-600">
+                        Keluar
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* ✅ Tombol Logout di banner atas dihapus — sekarang cuma
-                  ada di BottomNav (mobile) & Sidebar (desktop), biar ga
-                  dobel. Modal konfirmasi tetap sama (handleLogout). */}
+              {/* ✅ Tombol Logout berdiri sendiri di banner atas dihapus —
+                  sekarang jadi bagian dari dropdown "User Info Desktop" di
+                  atas (Profile & Keluar), setara sama tombol Akun di
+                  BottomNav versi mobile. */}
             </div>
           </div>
         </header>

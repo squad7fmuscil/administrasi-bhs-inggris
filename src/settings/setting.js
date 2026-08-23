@@ -1,24 +1,36 @@
 // settings/Setting.js - YANG INI HARUS DIPAKE!
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Settings,
   User,
   Calendar,
-  Building2,
-  Sliders,
   Users,
+  UserCog,
+  ServerCog,
+  Wrench,
   ChevronRight,
   ArrowLeft,
 } from "lucide-react";
 import ProfileTab from "./ProfileTab";
 import AcademicYearTab from "./AcademicYearTab";
-import SchoolManagementTab from "./SchoolManagementTab";
-import SchoolSettingsTab from "./SchoolSettingsTab";
 import ActiveUsersTab from "./ActiveUsersTab";
+import UserManagementTab from "./UserManagementTab";
+import SystemTab from "./SystemTab";
+import MaintenancePage from "./MaintenancePage";
 
-const Setting = ({ showToast }) => {
+const Setting = ({ showToast, currentUser, initialTab = null }) => {
   // null = tampilan grid card menu, selain itu = tab yang lagi dibuka
-  const [activeTab, setActiveTab] = useState(null);
+  // initialTab dipakai kalau Setting dibuka langsung nuju tab tertentu,
+  // misal dari tombol "Akun > Profile" di BottomNav (lihat App.js)
+  const [activeTab, setActiveTab] = useState(initialTab);
+  // Loading global buat tab yang butuh (ex: UserManagementTab pas assign wali kelas)
+  const [tabLoading, setTabLoading] = useState(false);
+
+  // Kalau initialTab berubah (misal user klik "Akun > Profile" lagi padahal
+  // Setting-nya udah kebuka), ikutin ke tab itu.
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
 
   const menus = [
     {
@@ -43,49 +55,73 @@ const Setting = ({ showToast }) => {
       color: "purple",
     },
     {
-      id: "school",
-      label: "Data Sekolah",
-      description: "Kelola informasi dan data sekolah",
-      icon: Building2,
-      color: "emerald",
+      id: "usermanagement",
+      label: "Management User",
+      description: "Kelola akun, role, dan akses pengguna",
+      icon: UserCog,
+      color: "indigo",
     },
     {
-      id: "settings",
-      label: "Pengaturan Sekolah",
-      description: "Konfigurasi pengaturan aplikasi sekolah",
-      icon: Sliders,
-      color: "amber",
+      id: "system",
+      label: "Management System",
+      description: "Konfigurasi tingkat sistem aplikasi",
+      icon: ServerCog,
+      color: "cyan",
+    },
+    {
+      id: "maintenance",
+      label: "Maintenance",
+      description: "Mode maintenance dan perawatan aplikasi",
+      icon: Wrench,
+      color: "orange",
     },
   ];
 
   const colorClasses = {
     blue: "bg-blue-100 text-blue-600 group-hover:bg-blue-200",
     purple: "bg-purple-100 text-purple-600 group-hover:bg-purple-200",
-    emerald: "bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200",
-    amber: "bg-amber-100 text-amber-600 group-hover:bg-amber-200",
     rose: "bg-rose-100 text-rose-600 group-hover:bg-rose-200",
+    indigo: "bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200",
+    cyan: "bg-cyan-100 text-cyan-600 group-hover:bg-cyan-200",
+    orange: "bg-orange-100 text-orange-600 group-hover:bg-orange-200",
   };
 
   const cardColorClasses = {
     blue: "bg-blue-50 border-blue-100 hover:border-blue-200",
     purple: "bg-purple-50 border-purple-100 hover:border-purple-200",
-    emerald: "bg-emerald-50 border-emerald-100 hover:border-emerald-200",
-    amber: "bg-amber-50 border-amber-100 hover:border-amber-200",
     rose: "bg-rose-50 border-rose-100 hover:border-rose-200",
+    indigo: "bg-indigo-50 border-indigo-100 hover:border-indigo-200",
+    cyan: "bg-cyan-50 border-cyan-100 hover:border-cyan-200",
+    orange: "bg-orange-50 border-orange-100 hover:border-orange-200",
   };
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "profile":
-        return <ProfileTab />;
+        return <ProfileTab user={currentUser} showToast={showToast} />;
       case "academic":
         return <AcademicYearTab />;
-      case "school":
-        return <SchoolManagementTab />;
-      case "settings":
-        return <SchoolSettingsTab />;
       case "activeusers":
         return <ActiveUsersTab showToast={showToast} />;
+      case "usermanagement":
+        return (
+          <UserManagementTab
+            user={currentUser}
+            showToast={showToast}
+            loading={tabLoading}
+            setLoading={setTabLoading}
+          />
+        );
+      case "system":
+        return (
+          <SystemTab
+            showToast={showToast}
+            loading={tabLoading}
+            setLoading={setTabLoading}
+          />
+        );
+      case "maintenance":
+        return <MaintenancePage showToast={showToast} />;
       default:
         return null;
     }

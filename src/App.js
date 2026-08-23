@@ -25,6 +25,7 @@ import ProgramSemester from "./page/PromesPage";
 import ProgramTahunan from "./page/ProtaPage";
 import KaldikPage from "./page/KaldikPage";
 import Setting from "./settings/setting";
+import MaintenanceGate from "./settings/MaintenanceGate";
 
 // Reports & System
 import Report from "./reports/Report";
@@ -364,6 +365,15 @@ export default function App() {
         );
       // ======================================
 
+      case "profile":
+        return (
+          <Setting
+            currentUser={currentUser}
+            showToast={showToast}
+            initialTab="profile"
+          />
+        );
+
       case "setting":
         return <Setting currentUser={currentUser} showToast={showToast} />;
 
@@ -411,12 +421,13 @@ export default function App() {
   }
 
   return (
-    <>
-      {/* Toast Notification */}
-      {toast.show && (
-        <div className="fixed top-4 right-4 z-[70] animate-slide-in">
-          <div
-            className={`
+    <MaintenanceGate currentUser={currentUser}>
+      <>
+        {/* Toast Notification */}
+        {toast.show && (
+          <div className="fixed top-4 right-4 z-[70] animate-slide-in">
+            <div
+              className={`
             px-6 py-4 rounded-lg shadow-xl border-l-4 min-w-[300px]
             ${
               toast.type === "success"
@@ -428,78 +439,78 @@ export default function App() {
                     : "bg-blue-50 border-blue-500 text-blue-800"
             }
           `}>
-            <div className="flex items-center gap-3">
-              {toast.type === "success" && (
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-              )}
-              {toast.type === "error" && (
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </div>
-              )}
-              {toast.type === "warning" && (
-                <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                </div>
-              )}
-              {toast.type === "info" && (
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-              )}
-              <p className="font-semibold">{toast.message}</p>
+              <div className="flex items-center gap-3">
+                {toast.type === "success" && (
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                )}
+                {toast.type === "error" && (
+                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </div>
+                )}
+                {toast.type === "warning" && (
+                  <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                  </div>
+                )}
+                {toast.type === "info" && (
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                )}
+                <p className="font-semibold">{toast.message}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <style>{`
+        <style>{`
         @keyframes slide-in {
           from {
             transform: translateX(100%);
@@ -515,20 +526,21 @@ export default function App() {
         }
       `}</style>
 
-      {/* ===== LAYOUT DENGAN SIDEBAR (HANYA UNTUK GURU/ADMIN) ===== */}
-      {/* SISWA PAKE StudentLayout (udah dibungkus di dalem renderPage()
+        {/* ===== LAYOUT DENGAN SIDEBAR (HANYA UNTUK GURU/ADMIN) ===== */}
+        {/* SISWA PAKE StudentLayout (udah dibungkus di dalem renderPage()
           di atas), BUKAN Layout.js punya guru/admin. */}
-      {currentUser.isStudent || currentUser.role === "student" ? (
-        renderPage()
-      ) : (
-        <Layout
-          currentPage={currentPage}
-          onPageChange={handlePageChange}
-          currentUser={currentUser}
-          onLogout={handleLogout}>
-          {renderPage()}
-        </Layout>
-      )}
-    </>
+        {currentUser.isStudent || currentUser.role === "student" ? (
+          renderPage()
+        ) : (
+          <Layout
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+            currentUser={currentUser}
+            onLogout={handleLogout}>
+            {renderPage()}
+          </Layout>
+        )}
+      </>
+    </MaintenanceGate>
   );
 }

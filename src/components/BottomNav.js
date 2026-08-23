@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import {
   Home,
   Settings,
@@ -6,6 +7,8 @@ import {
   ClipboardList,
   UserCheck,
   BookOpen,
+  UserCircle,
+  User,
 } from "lucide-react";
 
 // ✅ Bottom navbar khusus mobile (lg:hidden).
@@ -19,8 +22,43 @@ export default function BottomNav({
   currentPage,
   onPageChange,
   onLogout,
+  onProfileClick, // opsional: kalau gak dikasih, fallback ke onPageChange("profile")
   role = "admin", // "admin" | "guru" | "walikelas"
 }) {
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const accountMenuRef = useRef(null);
+
+  // Tutup menu akun kalau klik di luar area menu/tombol
+  useEffect(() => {
+    if (!showAccountMenu) return;
+
+    function handleClickOutside(event) {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target)
+      ) {
+        setShowAccountMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showAccountMenu]);
+
+  const handleProfileClick = () => {
+    setShowAccountMenu(false);
+    if (onProfileClick) {
+      onProfileClick();
+    } else if (onPageChange) {
+      onPageChange("profile");
+    }
+  };
+
+  const handleLogoutClick = () => {
+    setShowAccountMenu(false);
+    onLogout?.();
+  };
+
   const adminNavItems = [
     {
       id: "dashboard",
@@ -125,17 +163,53 @@ export default function BottomNav({
           );
         })}
 
-        {/* Logout - soft rose biar tetap keliatan beda kategori tapi gak terlalu mencolok */}
-        <button
-          onClick={onLogout}
-          className="flex flex-col items-center justify-center flex-1 min-w-0 py-0.5 gap-1">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600 border border-rose-200 shadow-sm">
-            <LogOut size={20} strokeWidth={2.2} />
-          </div>
-          <span className="text-[11px] font-bold text-slate-700 truncate max-w-full">
-            Keluar
-          </span>
-        </button>
+        {/* Akun - buka popup kecil berisi Profile & Keluar */}
+        <div ref={accountMenuRef} className="relative flex-1 min-w-0">
+          {showAccountMenu && (
+            <div className="absolute bottom-[calc(100%+10px)] right-1 w-44 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150">
+              <button
+                onClick={handleProfileClick}
+                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-left hover:bg-slate-50 transition-colors">
+                <span className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                  <User size={16} strokeWidth={2.2} />
+                </span>
+                <span className="text-[13px] font-bold text-slate-700">
+                  Profile
+                </span>
+              </button>
+              <div className="h-px bg-gray-100 mx-1" />
+              <button
+                onClick={handleLogoutClick}
+                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-left hover:bg-rose-50 transition-colors">
+                <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <LogOut size={16} strokeWidth={2.2} />
+                </span>
+                <span className="text-[13px] font-bold text-rose-600">
+                  Keluar
+                </span>
+              </button>
+            </div>
+          )}
+
+          <button
+            onClick={() => setShowAccountMenu((prev) => !prev)}
+            className="flex flex-col items-center justify-center w-full min-w-0 py-0.5 gap-1">
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm transition-all ${
+                showAccountMenu
+                  ? "bg-rose-500 text-white shadow-md scale-105"
+                  : "bg-rose-50 text-rose-600 border border-rose-200"
+              }`}>
+              <UserCircle size={20} strokeWidth={2.2} />
+            </div>
+            <span
+              className={`text-[11px] font-bold truncate max-w-full ${
+                showAccountMenu ? "text-rose-700" : "text-slate-700"
+              }`}>
+              Akun
+            </span>
+          </button>
+        </div>
       </div>
     </nav>
   );
