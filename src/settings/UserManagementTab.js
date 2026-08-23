@@ -18,6 +18,7 @@ import {
   Download,
   Upload,
   ArrowRight,
+  GraduationCap,
 } from "lucide-react";
 
 // ✅ FUNGSI GENERATE TEACHER_ID SEQUENTIAL (DIPINDAHKAN dari SchoolManagementTab)
@@ -62,8 +63,17 @@ const UserManagementTab = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
 
+  // ✅ STATE BARU: Filter by Role (all/teacher/guru_bk/admin/student)
+  const [roleFilter, setRoleFilter] = useState("all");
+
   // ✅ STATE BARU: Available Classes untuk Wali Kelas
   const [availableClasses, setAvailableClasses] = useState([]);
+
+  // ✅ STATE BARU: Students Roster (biodata dari tabel students) untuk linking akun siswa
+  const [studentsRoster, setStudentsRoster] = useState([]);
+  const [loadingStudentsRoster, setLoadingStudentsRoster] = useState(false);
+  // id siswa (dari tabel students) yang dipilih untuk di-link ke akun baru yang sedang dibuat
+  const [selectedStudentLink, setSelectedStudentLink] = useState("");
 
   // ✅ HAPUS state pagination, cukup totalUsers aja
   const [totalUsers, setTotalUsers] = useState(0);
@@ -95,6 +105,7 @@ const UserManagementTab = ({
     teacher_id: "",
     no_hp: "",
     is_active: true,
+    homeroom_class_id: "",
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -160,6 +171,31 @@ const UserManagementTab = ({
     } catch (error) {
       console.error("Error loading classes:", error);
       showToast("Error loading classes: " + error.message, "error");
+    }
+  }, [showToast]);
+
+  // ✅ FUNGSI BARU: Load Students Roster (biodata dari tabel students) untuk linking akun siswa
+  const loadStudentsRoster = useCallback(async () => {
+    try {
+      setLoadingStudentsRoster(true);
+
+      const { data: studentsData, error } = await supabase
+        .from("students")
+        .select(
+          "id, full_name, nis, class_id, academic_year, user_id, is_active",
+        )
+        .eq("is_active", true)
+        .order("class_id")
+        .order("full_name");
+
+      if (error) throw error;
+
+      setStudentsRoster(studentsData || []);
+    } catch (error) {
+      console.error("Error loading students roster:", error);
+      showToast("Error loading data siswa: " + error.message, "error");
+    } finally {
+      setLoadingStudentsRoster(false);
     }
   }, [showToast]);
 
@@ -499,27 +535,33 @@ const UserManagementTab = ({
     }
   }, [showToast]);
 
-  // ✅ TETAP - Filter users based on search (client-side)
+  // ✅ UPDATE - Filter users based on search + role (client-side)
   useEffect(() => {
+    let result = userSearchResults;
+
+    if (roleFilter !== "all") {
+      result = result.filter((u) => u.role === roleFilter);
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      const filtered = userSearchResults.filter(
+      result = result.filter(
         (u) =>
           u.full_name.toLowerCase().includes(query) ||
           u.username.toLowerCase().includes(query) ||
           u.teacher_id?.toLowerCase().includes(query),
       );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(userSearchResults);
     }
-  }, [searchQuery, userSearchResults]);
+
+    setFilteredUsers(result);
+  }, [searchQuery, roleFilter, userSearchResults]);
 
   // Load users on mount
   useEffect(() => {
     searchUsers("");
     loadAvailableClasses(); // ✅ Load classes saat component mount
-  }, [searchUsers, loadAvailableClasses]);
+    loadStudentsRoster(); // ✅ Load roster siswa saat component mount
+  }, [searchUsers, loadAvailableClasses, loadStudentsRoster]);
 
   // ========== FORM HANDLERS ==========
 
@@ -541,7 +583,9 @@ const UserManagementTab = ({
       teacher_id: teacherId,
       no_hp: "",
       is_active: true,
+      homeroom_class_id: "",
     });
+    setSelectedStudentLink("");
     setFormErrors({});
     setShowUserModal(true);
   };
@@ -557,7 +601,11 @@ const UserManagementTab = ({
       teacher_id: user.teacher_id || "",
       no_hp: user.no_hp || "",
       is_active: user.is_active,
+      homeroom_class_id: user.homeroom_class_id || "",
     });
+    // ✅ Kalau role student, cari row di roster yang udah ke-link ke akun ini
+    const linkedStudent = studentsRoster.find((s) => s.user_id === user.id);
+    setSelectedStudentLink(linkedStudent ? linkedStudent.id : "");
     setFormErrors({});
     setShowUserModal(true);
   };
@@ -593,6 +641,10 @@ const UserManagementTab = ({
       } else if (!/^G-\d{2,3}$/.test(formData.teacher_id)) {
         errors.teacher_id = "Format salah! Contoh: G-01, G-12, G-100";
       }
+    }
+
+    if (formData.role === "student" && !formData.homeroom_class_id) {
+      errors.homeroom_class_id = "Kelas wajib dipilih untuk role siswa";
     }
 
     if (formData.no_hp && formData.no_hp.trim()) {
@@ -673,11 +725,18 @@ const UserManagementTab = ({
           userData.teacher_id = teacherId;
         }
 
+        // ✅ Kelas untuk role student
+        if (formData.role === "student") {
+          userData.homeroom_class_id = formData.homeroom_class_id || null;
+        }
+
         console.log("📤 Inserting user data:", userData);
 
-        const { error: insertError } = await supabase
+        const { data: insertedUser, error: insertError } = await supabase
           .from("users")
-          .insert([userData]);
+          .insert([userData])
+          .select("id")
+          .single();
 
         if (insertError) {
           console.error("❌ Insert error:", insertError);
@@ -687,6 +746,24 @@ const UserManagementTab = ({
           );
           setSubmitting(false);
           return;
+        }
+
+        // ✅ Kalau role student & ada roster siswa yang dipilih, link akun ke biodata siswa
+        if (formData.role === "student" && selectedStudentLink) {
+          const { error: linkError } = await supabase
+            .from("students")
+            .update({ user_id: insertedUser.id })
+            .eq("id", selectedStudentLink);
+
+          if (linkError) {
+            console.error("❌ Gagal link akun ke data siswa:", linkError);
+            showToast(
+              `User berhasil dibuat, tapi gagal link ke data siswa: ${linkError.message}`,
+              "warning",
+            );
+          } else {
+            loadStudentsRoster(); // refresh biar picker keupdate
+          }
         }
 
         await logAuditActivity("CREATE_USER", null, {
@@ -715,6 +792,12 @@ const UserManagementTab = ({
           is_active: formData.is_active,
         };
 
+        // ✅ Kelas untuk role student (jangan sentuh homeroom_class_id kalau bukan student,
+        // karena buat teacher itu dikelola lewat kolom Wali Kelas di tabel)
+        if (formData.role === "student") {
+          updateData.homeroom_class_id = formData.homeroom_class_id || null;
+        }
+
         if (formData.password) {
           updateData.password = formData.password.trim();
         }
@@ -730,6 +813,39 @@ const UserManagementTab = ({
           showToast(`Gagal mengupdate user: ${updateError.message}`, "error");
           setSubmitting(false);
           return;
+        }
+
+        // ✅ Sinkronisasi link roster siswa kalau role student
+        if (formData.role === "student") {
+          const previousLinked = studentsRoster.find(
+            (s) => s.user_id === editingUser.id,
+          );
+
+          // Lepas link lama kalau ganti siswa yang di-link
+          if (previousLinked && previousLinked.id !== selectedStudentLink) {
+            await supabase
+              .from("students")
+              .update({ user_id: null })
+              .eq("id", previousLinked.id);
+          }
+
+          // Pasang link baru
+          if (selectedStudentLink) {
+            const { error: linkError } = await supabase
+              .from("students")
+              .update({ user_id: editingUser.id })
+              .eq("id", selectedStudentLink);
+
+            if (linkError) {
+              console.error("❌ Gagal update link data siswa:", linkError);
+              showToast(
+                `User diupdate, tapi gagal update link data siswa: ${linkError.message}`,
+                "warning",
+              );
+            }
+          }
+
+          loadStudentsRoster(); // refresh picker
         }
 
         await logAuditActivity("UPDATE_USER", editingUser, {
@@ -864,6 +980,79 @@ const UserManagementTab = ({
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Stats Summary - dipindah ke atas, 2 baris di HP, 1 baris di desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Users className="text-blue-600 dark:text-blue-400" size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                Total Pengguna
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {totalUsers}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <Shield
+                className="text-green-600 dark:text-green-400"
+                size={18}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                Aktif
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {filteredUsers.filter((u) => u.is_active).length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Shield
+                className="text-purple-600 dark:text-purple-400"
+                size={18}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                Admin
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {filteredUsers.filter((u) => u.role === "admin").length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <GraduationCap
+                className="text-emerald-600 dark:text-emerald-400"
+                size={18}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                Siswa
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {filteredUsers.filter((u) => u.role === "student").length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Search & Add Section dengan Export/Import */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-6 border border-blue-100 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -882,13 +1071,27 @@ const UserManagementTab = ({
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2">
+          {/* Role Filter */}
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm min-h-[44px]">
+            <option value="all">Semua Role</option>
+            <option value="teacher">Guru</option>
+            <option value="guru_bk">Guru BK</option>
+            <option value="admin">Administrator</option>
+            <option value="student">Siswa</option>
+            <option value="km">KM</option>
+            <option value="bendahara">Bendahara</option>
+          </select>
+
+          {/* Action Buttons - 2 kolom di HP, 1 baris di desktop */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-2">
             {/* Add User Button */}
             <button
               onClick={openAddModal}
               disabled={loading}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg font-semibold transition-colors flex-shrink-0 text-sm min-h-[44px]">
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg font-semibold transition-colors sm:flex-shrink-0 text-sm min-h-[44px]">
               <Plus size={18} />
               <span>Tambah User</span>
             </button>
@@ -897,7 +1100,7 @@ const UserManagementTab = ({
             <button
               onClick={exportUsersCSV}
               disabled={loading || totalUsers === 0}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors flex-shrink-0 text-sm min-h-[44px] disabled:opacity-50">
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors sm:flex-shrink-0 text-sm min-h-[44px] disabled:opacity-50">
               <Download size={18} />
               <span>Export CSV</span>
             </button>
@@ -906,13 +1109,13 @@ const UserManagementTab = ({
             <button
               onClick={downloadTemplateCSV}
               disabled={loading}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors flex-shrink-0 text-sm min-h-[44px] disabled:opacity-50">
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors sm:flex-shrink-0 text-sm min-h-[44px] disabled:opacity-50">
               <Download size={18} />
               <span>Template</span>
             </button>
 
             {/* Import Button */}
-            <label className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg font-semibold transition-colors flex-shrink-0 text-sm min-h-[44px] cursor-pointer disabled:opacity-50">
+            <label className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg font-semibold transition-colors sm:flex-shrink-0 text-sm min-h-[44px] cursor-pointer disabled:opacity-50">
               <Upload size={18} />
               <span>Import CSV</span>
               <input
@@ -1005,18 +1208,34 @@ const UserManagementTab = ({
                               ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                               : user.role === "guru_bk"
                                 ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300"
-                                : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                                : user.role === "student"
+                                  ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                                  : user.role === "km"
+                                    ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+                                    : user.role === "bendahara"
+                                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
+                                      : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                           }`}>
-                          <Shield size={12} />
+                          {user.role === "student" ? (
+                            <GraduationCap size={12} />
+                          ) : (
+                            <Shield size={12} />
+                          )}
                           {user.role === "admin"
                             ? "Admin"
                             : user.role === "guru_bk"
                               ? "Guru BK"
-                              : "Guru"}
+                              : user.role === "student"
+                                ? "Siswa"
+                                : user.role === "km"
+                                  ? "KM"
+                                  : user.role === "bendahara"
+                                    ? "Bendahara"
+                                    : "Guru"}
                         </span>
                       </td>
 
-                      {/* ✅ COLUMN WALI KELAS - Editable untuk Teacher */}
+                      {/* ✅ COLUMN WALI KELAS - Editable untuk Teacher, read-only info untuk Student */}
                       <td className="px-4 py-3">
                         {user.role === "teacher" ? (
                           <select
@@ -1036,6 +1255,12 @@ const UserManagementTab = ({
                               </option>
                             ))}
                           </select>
+                        ) : user.role === "student" ? (
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {user.homeroom_class_id
+                              ? `Kelas ${user.homeroom_class_id}`
+                              : "-"}
+                          </span>
                         ) : (
                           <span className="text-gray-400 dark:text-gray-500 text-sm">
                             -
@@ -1088,75 +1313,6 @@ const UserManagementTab = ({
               </table>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Users className="text-blue-600 dark:text-blue-400" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Total Pengguna
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {totalUsers}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <Shield
-                className="text-green-600 dark:text-green-400"
-                size={20}
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Aktif</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {filteredUsers.filter((u) => u.is_active).length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Shield
-                className="text-purple-600 dark:text-purple-400"
-                size={20}
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Admin</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {filteredUsers.filter((u) => u.role === "admin").length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-200 dark:border-gray-700 shadow">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <Shield
-                className="text-orange-600 dark:text-orange-400"
-                size={20}
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Guru BK
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {filteredUsers.filter((u) => u.role === "guru_bk").length}
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1255,6 +1411,9 @@ const UserManagementTab = ({
                   <option value="teacher">Guru</option>
                   <option value="guru_bk">Guru BK</option>
                   <option value="admin">Administrator</option>
+                  <option value="student">Siswa</option>
+                  <option value="km">KM (Ketua Murid)</option>
+                  <option value="bendahara">Bendahara</option>
                 </select>
                 {formData.role === "admin" && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
@@ -1303,6 +1462,76 @@ const UserManagementTab = ({
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* Kelas & Link Roster - khusus role student */}
+              {formData.role === "student" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Kelas <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.homeroom_class_id}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          homeroom_class_id: e.target.value,
+                        }))
+                      }
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm ${
+                        formErrors.homeroom_class_id
+                          ? "border-red-500"
+                          : "border-blue-300 dark:border-gray-600"
+                      }`}>
+                      <option value="">Pilih Kelas</option>
+                      {availableClasses.map((cls) => (
+                        <option key={cls.id} value={cls.id}>
+                          Kelas {cls.id}
+                        </option>
+                      ))}
+                    </select>
+                    {formErrors.homeroom_class_id && (
+                      <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} /> {formErrors.homeroom_class_id}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Link ke Data Siswa (Roster)
+                      <span className="text-gray-500 dark:text-gray-400 text-xs font-normal ml-2">
+                        (Opsional)
+                      </span>
+                    </label>
+                    <select
+                      value={selectedStudentLink}
+                      onChange={(e) => setSelectedStudentLink(e.target.value)}
+                      disabled={loadingStudentsRoster}
+                      className="w-full px-4 py-3 border border-blue-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm">
+                      <option value="">— Tidak di-link —</option>
+                      {studentsRoster
+                        .filter(
+                          (s) =>
+                            !s.user_id ||
+                            s.id === selectedStudentLink ||
+                            (modalMode === "edit" &&
+                              s.user_id === editingUser?.id),
+                        )
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.full_name} ({s.nis}) - Kelas {s.class_id}
+                          </option>
+                        ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      <ArrowRight size={10} className="inline mr-1" />
+                      Menghubungkan akun login ini ke biodata siswa di tabel
+                      roster (opsional, biar bisa lihat presensi/nilai otomatis)
+                    </p>
+                  </div>
+                </>
               )}
 
               {/* Password */}
@@ -1549,7 +1778,13 @@ const UserManagementTab = ({
                         ? "Administrator"
                         : deleteTarget.role === "guru_bk"
                           ? "Guru BK"
-                          : "Guru"}
+                          : deleteTarget.role === "student"
+                            ? "Siswa"
+                            : deleteTarget.role === "km"
+                              ? "KM"
+                              : deleteTarget.role === "bendahara"
+                                ? "Bendahara"
+                                : "Guru"}
                     </span>
                   </div>
                   {deleteTarget.homeroom_class_id && (
