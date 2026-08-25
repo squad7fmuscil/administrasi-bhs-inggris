@@ -1,0 +1,227 @@
+Struktur File Aplikasi Bahasa Inggris 
+
+Tabel Supabase
+
+academic_events : id,title,category_id,start_date,end_date,description,academic_year,semester,created_by,created_at,updated_at
+academic_years : id,year,semester,start_date,end_date,is_active,created_at,updated_at
+attendance : id,student_id,date,status,notes,created_at,class,type,mapel,teacher_name,semester,academic_year
+class_organization : id,class_id,academic_year,position,position_order,student_id,created_at,updated_at,position_level
+class_schedules : id,class_id,day,subject,start_time,end_time,teacher_name,created_at
+classes : id,grade,academic_year,created_at,updated_at,is_active
+cleanup_history : id,timestamp,triggered_by,results,created_at
+duty_schedules : id,class_id,academic_year,semester,layout,updated_at
+event_categories : id,name,color,created_at
+grades : id,student_id,class_id,teacher_id,subject,assignment_type,score,semester,academic_year,academic_year_id,created_at
+grades_katrol : id,student_id,class_id,teacher_id,academic_year_id,subject,academic_year,semester,nh1,nh2,nh3,psts,psas,rata_nh,nilai_akhir,nh1_k,nh2_k,nh3_k,psts_k,psas_k,rata_nh_k,nilai_akhir_k,kkm,nilai_min_kelas,nilai_max_kelas,target_min,target_max,jumlah_siswa_kelas,formula_used,status,notes,processed_by,processed_at,created_at,updated_at,student_name,student_nis
+grades_katrol_settings : id,mata_pelajaran_id,kelas_id,kkm,nilai_maksimal,created_at,updated_at,updated_by,academic_year,semester,academic_year_id
+kaldik_documents : id,academic_year,title,file_url,uploaded_by,created_at
+pengumuman : id,title,content,target_class,created_by,created_at,updated_at,is_pinned
+piket_schedule : id,kelas_id,siswa_id,hari,created_at,updated_at
+saran_masukan : id,student_id,class_id,message,status,created_at
+school_settings : id,setting_key,setting_value,created_at,updated_at
+seating_charts : id,class_id,academic_year,semester,rows,cols,layout,updated_at,seats_per_desk
+student_development_notes : id,student_id,teacher_id,class_id,academic_year,semester,category,label,note_content,action_taken,created_at,updated_at
+student_devices : id,student_id,device_id,brand,model,platform,browser,last_login_at,created_at
+student_profile_details : student_id,alamat,no_hp,nama_ortu,no_hp_ortu,updated_at,sekolah_asal
+students : id,full_name,nis,gender,class_id,academic_year,is_active,created_at,updated_at,user_id
+system_health_logs : id,checked_at,checked_by,total_issues,critical_count,warning_count,info_count,issues_detail,execution_time,status,created_at
+teacher_assignments : id,teacher_id,class_id,subject,academic_year,semester,created_at,academic_year_id
+teacher_attendance : id,teacher_id,attendance_date,status,clock_in,check_in_method,notes,created_at,updated_at,gps_location,is_suspicious,full_name,admin_info
+teacher_schedules : id,teacher_id,day,start_time,end_time,class_id,subject,room_number,created_at,updated_at
+teaching_journal : id,teacher_id,class_id,subject,academic_year,tanggal,jam_ke,materi,tujuan_pembelajaran,kegiatan,catatan,created_at,updated_at
+users : id,username,password,full_name,teacher_id,role,homeroom_class_id,is_active,no_hp,created_at,updated_at,auth_id,last_login 
+
+
+administrasi-bhs-inggris/
+├── public/
+│   ├── favicon.ico
+│   ├── logo192.png
+│   ├── logo512.png
+│   ├── logo_sekolah.png
+│   ├── manifest.json
+│   └── robots.txt
+├── src/
+│   ├── assets/
+│   │   ├── Background-0.JPG
+│   │   ├── Background-1.jpg
+│   │   ├── Background-2.jpg
+│   │   ├── Background.jpeg
+│   │   └── dir
+│   ├── attendance-teacher/
+│   │   ├── reports/
+│   │   │   ├── DailySummary.js
+│   │   │   ├── ExportExcel.js
+│   │   │   ├── ITMReport.js
+│   │   │   ├── ITMReportExcel.js
+│   │   │   └── MonthlyView.js
+│   │   ├── AdminAttendanceView.js
+│   │   ├── AttendanceTabs.js
+│   │   ├── CustomDatePicker.js
+│   │   ├── LocationValidator.js
+│   │   ├── ManualCheckIn.js
+│   │   ├── MyAttendanceStatus.js
+│   │   ├── MyMonthlyHistory.js
+│   │   ├── QRCodeGenerator.js
+│   │   ├── QRScanner.js
+│   │   ├── TeacherAttendance.js
+│   │   ├── TodaySchedule.js
+│   │   └── index.html
+│   ├── components/
+│   │   ├── BottomNav.js
+│   │   ├── ConnectedDevices.js
+│   │   ├── Dashboard.js
+│   │   ├── DashboardAdmin.js
+│   │   ├── DashboardHomeTeacher.js
+│   │   ├── Layout.js
+│   │   ├── Login.js               ✅ yang aktif dipakai App.js
+│   │   ├── Logo.js
+│   │   ├── PengumumanWaliKelas.js
+│   │   ├── SaranMasukanSiswa.js
+│   │   ├── Sidebar.js
+│   │   └── StudentProfileCompletion.js
+│   ├── e-learning/
+│   │   ├── EasyGrammar/
+│   │   │   ├── EasyGrammarChecker.js
+│   │   │   ├── LatihanSoal.js
+│   │   │   ├── MateriDetail.js
+│   │   │   └── index.js
+│   │   ├── EasySoal/
+│   │   │   └── grade7/
+│   │   │       ├── chapter0Data.js
+│   │   │       ├── chapter1Data.js
+│   │   │       ├── chapter2Data.js
+│   │   │       ├── chapter3Data.js
+│   │   │       ├── chapter4Data.js
+│   │   │       └── chapter5Data.js
+│   │   ├── EasyMateri.js
+│   │   ├── EasySoal.js
+│   │   ├── EasyText.js
+│   │   ├── EasyVocab.js
+│   │   └── e-LearningDashboard.js
+│   ├── page/
+│   │   ├── attendance/                ✅ yang aktif dipakai App.js
+│   │   │   ├── Attendance.js
+│   │   │   ├── AttendanceExcel.js
+│   │   │   ├── AttendanceFilters.js
+│   │   │   ├── AttendanceMain.js
+│   │   │   ├── AttendanceModals.js
+│   │   │   ├── AttendancePDF.js
+│   │   │   ├── AttendanceStats.js
+│   │   │   └── AttendanceTable.js
+│   │   ├── grade/
+│   │   │   ├── GradeMain.js
+│   │   │   ├── Grades.js
+│   │   │   ├── GradesExcel.js
+│   │   │   ├── GradesKatrol.js
+│   │   │   ├── KatrolTable.js
+│   │   │   └── Utils.js
+│   │   ├── modul-ajar/
+│   │   │   ├── ModulGenerator.js
+│   │   │   ├── ModulTemplates.js
+│   │   │   ├── TpEnricher.js
+│   │   │   └── modulConfig.js
+│   │   ├── DutySchedule.js
+│   │   ├── JadwalPelajaran.js         🆕 fitur admin CRUD jadwal (terbaru)
+│   │   ├── KaldikData.js
+│   │   ├── KaldikPage.js
+│   │   ├── ModulAjar.js
+│   │   ├── Organigram.js
+│   │   ├── PromesPage.js
+│   │   ├── ProtaPage.js
+│   │   ├── SeatingChart.js
+│   │   ├── StudentNotes.js
+│   │   ├── Students.js
+│   │   ├── TeacherSchedule.js
+│   │   ├── TeacherScheduleExcel.js
+│   │   └── TeachingJournal.js
+│   ├── reports/
+│   │   ├── AdminReports.js
+│   │   ├── Report.js
+│   │   ├── ReportExcel.js
+│   │   ├── ReportHelpers.js
+│   │   ├── ReportModals.js
+│   │   └── TeacherReports.js
+│   ├── services/
+│   │   ├── academicYearService.js
+│   │   └── groqService.js
+│   ├── settings/
+│   │   ├── ActiveUsersTab.js
+│   │   ├── AcademicYearTab.js
+│   │   ├── ProfileTab.js
+│   │   ├── SchoolManagementTab.js
+│   │   ├── SchoolSettingsTab.js
+│   │   └── setting.js
+|
+│   ├── students/
+│   │   ├── belajar/
+│   │   │   ├── bahasa-inggris/
+│   │   │   │   ├── ChapterDetail.js
+│   │   │   │   └── ChapterList.js
+│   │   │   ├── BelajarMain.js
+│   │   │   └── MapelGrid.js
+│   │   ├── StudentAkun.js
+│   │   ├── StudentBottomNav.js
+│   │   ├── StudentDashboard.js
+│   │   ├── StudentHelpers.js
+│   │   ├── StudentJadwal.js
+│   │   ├── StudentLainnya.js
+│   │   ├── StudentLayout.js
+│   │   ├── StudentPengumuman.js
+│   │   ├── StudentPerangkatTerhubung.js
+│   │   ├── StudentPiket.js
+│   │   ├── StudentPresensi.js
+│   │   ├── StudentProfile.js
+│   │   ├── StudentSaran.js
+│   │   ├── StudentSidebar.js
+│   │   └── useStudentProfile.js
+│   ├── system/
+│   │   ├── checkers/
+│   │   │   ├── AppHealthChecker.js
+│   │   │   ├── BusinessLogicChecker.js
+│   │   │   ├── DataValidator.js
+│   │   │   └── DatabaseChecker.js
+│   │   ├── DatabaseCleanupMonitor.js
+│   │   ├── HealthChecker.js
+│   │   ├── MonitorDashboard.js
+│   │   ├── MonitorHistory.js
+│   │   ├── MonitorResults.js
+│   │   ├── MonitorSistem.js
+│   │   └── PerformanceMonitor.js
+│   ├── utils/
+│   │   ├── deviceInfo.js
+│   │   ├── offlineHelper.js
+│   │   ├── studentDevices.js
+│   │   ├── studentSession.js
+│   │   └── systemHelpers.js
+│   ├── App.js
+│   ├── index.css
+│   ├── index.js
+│   ├── main.jsx                       ⚠️ cek dipakai/ngga (lihat catatan)
+│   ├── reportWebVitals.js
+│   └── supabaseClient.js
+├── supabase/
+│   ├── functions/
+│   │   ├── _shared/
+│   │   │   └── cors.ts
+│   │   ├── groq-proxy/
+│   │   │   ├── .npmrc
+│   │   │   ├── deno.json
+│   │   │   └── index.ts
+│   │   └── modul-proxy/
+│   │       ├── .npmrc
+│   │       ├── deno.json
+│   │       └── index.ts
+│   └── config.toml
+├── .gitignore
+├── README.md
+├── create_student_auth_accounts.js
+├── deploy-administrasi-bhs-inggris.bat
+├── eslint.config.js
+├── index.html
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── run-adm-bhs-inggris.bat
+├── tailwind.config.js
+├── vercel.json
+└── vite.config.js
